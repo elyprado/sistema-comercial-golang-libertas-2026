@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/joho/godotenv"
-	_ "github.com/lib/pq"
 )
 
 func init() {
@@ -29,8 +29,8 @@ func Connect() (*sql.DB, error) {
 		return nil, fmt.Errorf("Erro: Variáveis de ambiente do banco de dados não configuradas corretamente")
 	}
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable", host, port, user, password, dbname)
-	db, err := sql.Open("postgres", dsn)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?parseTime=true", user, password, host, port, dbname)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, fmt.Errorf("Erro ao conectar ao banco de dados: %v", err)
 	}
