@@ -12,6 +12,9 @@ func SetupRouter() *mux.Router {
 	// Configurar rotas de usuários em um arquivo separado
 	SetupUsuarioRoutes(router)
 
+	// Configaração rotas de compras em um arquivo separado
+	SetupComprasRouters(router)
+
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("404 - Not Found"))
