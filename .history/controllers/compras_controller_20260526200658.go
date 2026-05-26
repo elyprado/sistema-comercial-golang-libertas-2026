@@ -39,7 +39,6 @@ func GetCompras(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(compras)
 }
 
-// GetComprasById é responsável por buscar uma compra específica no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, executa uma consulta SQL para selecionar os campos relevantes da tabela de compras onde o ID corresponde ao valor fornecido, e depois codifica o resultado em JSON para enviar de volta ao cliente.
 func GetComprasById(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
