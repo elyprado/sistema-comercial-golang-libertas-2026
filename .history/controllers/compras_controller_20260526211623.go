@@ -84,20 +84,13 @@ func CreateCompras(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// verifica se variaveis não são nulas
-	if compra.Data == nil || compra.IdFornecedor == nil || compra.DataVencimento == nil {
-		http.Error(w, "Campos 'data', 'idfornecedor' e 'data_vencimento' são obrigatórios", http.StatusBadRequest)
-		return
-	}
-
-	// Converter as strings de data para time
-	dataConvertida, err := time.Parse("2006-01-02", *compra.Data)
+	dataConvertida, err := time.Parse("2006-01-02", compra.Data)
 	if err != nil {
 		http.Error(w, "Formato de 'date' inválido. Use o formato YYYY-MM-DD", http.StatusBadRequest)
 		return
 	}
 
-	vencimentoConvertido, err := time.Parse("2006-01-02", *compra.DataVencimento)
+	vencimentoConvertido, err := time.Parse("2006-01-02", compra.DataVencimento)
 	if err != nil {
 		http.Error(w, "Formato de 'data_vencimento' inválido. Use o formato YYYY-MM-DD", http.StatusBadRequest)
 		return
