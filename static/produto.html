@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Produtos | Sistema Comercial</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <style>
+    :root {
+      --bg-1: #f4f7f4;
+      --bg-2: #dfe9df;
+      --brand: #0f5f3e;
+      --brand-dark: #0a432c;
+      --accent: #f4b400;
+      --text-main: #1d2722;
+      --text-muted: #5f6d66;
+      --card-border: #d8e1da;
+    }
+
+    body {
+      font-family: "Manrope", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 10% 10%, #ffffff 0%, #ffffff00 40%),
+        radial-gradient(circle at 90% 0%, #e7f2ea 0%, #ffffff00 35%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: linear-gradient(90deg, var(--brand-dark), var(--brand));
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(15, 95, 62, 0.25);
+    }
+
+    .brand-badge {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 10px 30px rgba(22, 38, 28, 0.07);
+    }
+
+    .tag {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--brand);
+      background: #e9f4ee;
+      border-radius: 999px;
+      padding: 2px 10px;
+      display: inline-block;
+    }
+
+    .btn-main {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+    }
+
+    .btn-main:hover {
+      background: var(--brand-dark);
+      color: #fff;
+    }
+
+    .btn-aux {
+      border: 1px solid var(--brand);
+      color: var(--brand);
+      background: #fff;
+    }
+
+    .btn-aux:hover {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    table.table-produtos thead th {
+      background: #eef5f0;
+      color: var(--brand-dark);
+      font-weight: 700;
+      border-bottom: 2px solid var(--card-border);
+    }
+
+    table.table-produtos tbody tr:hover {
+      background: #f5faf6;
+    }
+
+    .price {
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .help-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+
+    .search-input {
+      border-radius: 999px;
+      border: 1px solid var(--card-border);
+      padding-left: 1rem;
+    }
+
+    .empty-state {
+      color: var(--text-muted);
+      padding: 2rem;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar py-3">
+    <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+      <div>
+        <div class="brand-badge mb-2">Grupo 1 - Produto</div>
+        <h1 class="h4 mb-0 fw-bold">Cadastro de Produtos</h1>
+      </div>
+      <div class="text-md-end">
+        <a href="index.html" class="btn btn-sm btn-light fw-semibold">&larr; Voltar ao menu</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container py-4 py-lg-5">
+    <section class="panel p-4 p-lg-4 mb-4">
+      <div class="row g-3 align-items-center">
+        <div class="col-md-6">
+          <span class="tag mb-2">Modulo CRUD</span>
+          <h2 class="h5 fw-bold mb-1">Gestao de produtos</h2>
+          <p class="help-text mb-0">Inclua, edite e remova produtos integrando com a API <code>/produtos</code>.</p>
+        </div>
+        <div class="col-md-3">
+          <input type="text" id="txtBusca" class="form-control search-input" placeholder="Buscar por descricao, marca, codigo...">
+        </div>
+        <div class="col-md-3 text-md-end">
+          <button type="button" class="btn btn-main fw-semibold" onclick="novo()">
+            + Novo produto
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel p-3 p-lg-4">
+      <div class="table-responsive">
+        <table class="table table-produtos align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="width: 70px;">ID</th>
+              <th>Descricao</th>
+              <th>Marca</th>
+              <th>Cod. Referencia</th>
+              <th>Cod. Barras</th>
+              <th class="text-end">Preco Custo</th>
+              <th class="text-end">Preco Venda</th>
+              <th class="text-end" style="width: 180px;">Acoes</th>
+            </tr>
+          </thead>
+          <tbody id="dados">
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal fade" id="modalProduto" tabindex="-1" aria-labelledby="modalProdutoLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" style="border-radius: 16px; border: 0;">
+        <div class="modal-header" style="background: linear-gradient(90deg, var(--brand-dark), var(--brand)); color: #fff;">
+          <h1 class="modal-title fs-5 fw-bold" id="modalProdutoLabel">Cadastro de Produto</h1>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label fw-semibold">Descricao</label>
+              <input type="text" class="form-control" id="txtDescricao" placeholder="Ex.: Cafe torrado 500g">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-semibold">Marca</label>
+              <input type="text" class="form-control" id="txtMarca" placeholder="Ex.: Tres Coracoes">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Codigo de Referencia</label>
+              <input type="text" class="form-control" id="txtCodigoReferencia" placeholder="SKU interno">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Codigo de Barras</label>
+              <input type="text" class="form-control" id="txtCodigoBarras" placeholder="EAN-13">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Preco de Custo</label>
+              <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input type="number" step="0.01" min="0" class="form-control" id="txtPrecoDeCusto" placeholder="0,00">
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Preco de Venda</label>
+              <div class="input-group">
+                <span class="input-group-text">R$</span>
+                <input type="number" step="0.01" min="0" class="form-control" id="txtPrecoDeVenda" placeholder="0,00">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-aux" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-main fw-semibold" onclick="salvar()">Salvar produto</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+
+  <script>
+    const API_BASE = "http://127.0.0.1:8080";
+    let idprodutoedicao = 0;
+    let produtosCache = [];
+
+    const fmtMoeda = new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL"
+    });
+
+    function formatPreco(valor) {
+      if (valor === null || valor === undefined || valor === "") return "-";
+      const n = Number(valor);
+      if (Number.isNaN(n)) return "-";
+      return fmtMoeda.format(n);
+    }
+
+    function safe(v) {
+      return v === null || v === undefined ? "" : v;
+    }
+
+    async function carregaDados() {
+      const tbody = document.getElementById("dados");
+      tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Carregando produtos...</td></tr>`;
+      try {
+        const resp = await fetch(`${API_BASE}/produtos`);
+        if (!resp.ok) throw new Error("Falha na requisicao");
+        const data = await resp.json();
+        produtosCache = Array.isArray(data) ? data : [];
+        renderTabela(produtosCache);
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state text-danger">Erro ao carregar produtos. Verifique se a API esta rodando em ${API_BASE}.</td></tr>`;
+      }
+    }
+
+    function renderTabela(lista) {
+      const tbody = document.getElementById("dados");
+      if (!lista || lista.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Nenhum produto encontrado.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = "";
+      for (const p of lista) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="text-muted">${safe(p.idproduto)}</td>
+          <td class="fw-semibold">${safe(p.descricao)}</td>
+          <td>${safe(p.marca)}</td>
+          <td><code>${safe(p.codigo_referencia)}</code></td>
+          <td><code>${safe(p.codigo_barras)}</code></td>
+          <td class="text-end price">${formatPreco(p.preco_de_custo)}</td>
+          <td class="text-end price">${formatPreco(p.preco_de_venda)}</td>
+          <td class="text-end">
+            <button class="btn btn-sm btn-aux me-1" onclick="editar(${p.idproduto})">Editar</button>
+            <button class="btn btn-sm btn-outline-danger" onclick="excluir(${p.idproduto})">Excluir</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    document.getElementById("txtBusca").addEventListener("input", (ev) => {
+      const termo = ev.target.value.trim().toLowerCase();
+      if (!termo) {
+        renderTabela(produtosCache);
+        return;
+      }
+      const filtrados = produtosCache.filter(p => {
+        return (
+          (p.descricao || "").toLowerCase().includes(termo) ||
+          (p.marca || "").toLowerCase().includes(termo) ||
+          (p.codigo_referencia || "").toLowerCase().includes(termo) ||
+          (p.codigo_barras || "").toLowerCase().includes(termo)
+        );
+      });
+      renderTabela(filtrados);
+    });
+
+    const modalProduto = new bootstrap.Modal(document.getElementById('modalProduto'));
+
+    function limparFormulario() {
+      document.getElementById("txtDescricao").value = "";
+      document.getElementById("txtMarca").value = "";
+      document.getElementById("txtCodigoReferencia").value = "";
+      document.getElementById("txtCodigoBarras").value = "";
+      document.getElementById("txtPrecoDeCusto").value = "";
+      document.getElementById("txtPrecoDeVenda").value = "";
+    }
+
+    function novo() {
+      idprodutoedicao = 0;
+      document.getElementById("modalProdutoLabel").innerText = "Novo Produto";
+      limparFormulario();
+      modalProduto.show();
+    }
+
+    async function editar(idproduto) {
+      idprodutoedicao = idproduto;
+      try {
+        const resp = await fetch(`${API_BASE}/produtos/${idproduto}`);
+        if (!resp.ok) throw new Error("Erro ao buscar produto");
+        const p = await resp.json();
+        document.getElementById("modalProdutoLabel").innerText = `Editar Produto #${idproduto}`;
+        document.getElementById("txtDescricao").value = safe(p.descricao);
+        document.getElementById("txtMarca").value = safe(p.marca);
+        document.getElementById("txtCodigoReferencia").value = safe(p.codigo_referencia);
+        document.getElementById("txtCodigoBarras").value = safe(p.codigo_barras);
+        document.getElementById("txtPrecoDeCusto").value = p.preco_de_custo ?? "";
+        document.getElementById("txtPrecoDeVenda").value = p.preco_de_venda ?? "";
+        modalProduto.show();
+      } catch (e) {
+        alert("Erro ao carregar o produto para edicao.");
+      }
+    }
+
+    async function salvar() {
+      const descricao = document.getElementById("txtDescricao").value.trim();
+      if (!descricao) {
+        alert("Informe a descricao do produto.");
+        return;
+      }
+
+      const precoCustoStr = document.getElementById("txtPrecoDeCusto").value;
+      const precoVendaStr = document.getElementById("txtPrecoDeVenda").value;
+
+      const produto = {
+        descricao: descricao,
+        marca: document.getElementById("txtMarca").value.trim(),
+        codigo_referencia: document.getElementById("txtCodigoReferencia").value.trim(),
+        codigo_barras: document.getElementById("txtCodigoBarras").value.trim(),
+        preco_de_custo: precoCustoStr === "" ? null : parseFloat(precoCustoStr),
+        preco_de_venda: precoVendaStr === "" ? null : parseFloat(precoVendaStr)
+      };
+
+      const metodo = idprodutoedicao > 0 ? "PUT" : "POST";
+      const url = idprodutoedicao > 0
+        ? `${API_BASE}/produtos/${idprodutoedicao}`
+        : `${API_BASE}/produtos`;
+
+      try {
+        const resp = await fetch(url, {
+          method: metodo,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(produto)
+        });
+        if (resp.ok) {
+          modalProduto.hide();
+          await carregaDados();
+        } else {
+          const txt = await resp.text();
+          alert("Erro ao salvar produto: " + txt);
+        }
+      } catch (e) {
+        alert("Falha de conexao ao salvar produto.");
+      }
+    }
+
+    async function excluir(idproduto) {
+      if (!confirm("Deseja realmente excluir este produto?")) return;
+      try {
+        const resp = await fetch(`${API_BASE}/produtos/${idproduto}`, { method: "DELETE" });
+        if (resp.ok) {
+          await carregaDados();
+        } else {
+          alert("Erro ao excluir o produto.");
+        }
+      } catch (e) {
+        alert("Falha de conexao ao excluir produto.");
+      }
+    }
+
+    carregaDados();
+  </script>
+</body>
+</html>
