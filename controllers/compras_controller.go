@@ -146,6 +146,7 @@ func UpdateCompras(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Compra atualizada com sucesso"})
 }
 
+// DeleteCompras é responsável por deletar uma compra existente no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, executa uma consulta SQL para deletar a compra da tabela de compras onde o ID corresponde ao valor fornecido. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON. Se a compra não for encontrada, ele retorna um erro 404.
 func DeleteCompras(w http.ResponseWriter, r *http.Request) {
 	db, erro := config.Connect()
 	if erro != nil {
@@ -153,4 +154,22 @@ func DeleteCompras(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	query := "DELETE FROM compra WHERE idcompra=?"
+	result, err := db.Exec(query, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Compra não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Compra removida com sucesso"})
 }
