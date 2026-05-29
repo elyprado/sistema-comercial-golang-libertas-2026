@@ -9,33 +9,33 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func GetUsuarios(w http.ResponseWriter, r *http.Request) {
+func GetFornecedores(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario ORDER BY nome")
+	rows, err := db.Query("SELECT idfornecedor, nome, telefone, cnpj, e-mail, logradouro, numero, bairro, cidade, uf FROM fornecedor ORDER BY nome")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var users []models.User
+	var fornecedores []models.Fornecedor
 	for rows.Next() {
-		var user models.User
-		if err := rows.Scan(&user.Idusuario, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		var forn models.Fornecedor
+		if err := rows.Scan(&forn.Idfornecedor, &forn.Nome, &forn.Telefone, &forn.Cnpj, &forn.Email, &forn.Logradouro, &forn.Numero, &forn.Bairro, &forn.Cidade, &forn.Uf); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		users = append(users, user)
+		fornecedores = append(fornecedores, forn)
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(fornecedores)
 }
 
-func GetUsuarioById(w http.ResponseWriter, r *http.Request) {
+func GetFornecedorById(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -46,22 +46,24 @@ func GetUsuarioById(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id := params["id"]
 
-	rows, err := db.Query("SELECT idusuario, nome, email, senha, telefone FROM usuario WHERE idusuario = ?", id)
+	rows, err := db.Query("SELECT idfornecedor, nome, telefone, cnpj, e-mail, logradouro, numero, bairro, cidade, uf FROM fornecedor WHERE idfornecedor = ?", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer rows.Close()
-	var user models.User
+	var forn models.Fornecedor
 	for rows.Next() {
-		if err := rows.Scan(&user.Idusuario, &user.Nome, &user.Email, &user.Senha, &user.Telefone); err != nil {
+		if err := rows.Scan(&forn.Idfornecedor, &forn.Nome, &forn.Telefone, &forn.Cnpj, &forn.Email, &forn.Logradouro, &forn.Numero, &forn.Bairro, &forn.Cidade, &forn.Uf); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	json.NewEncoder(w).Encode(forn)
 }
+
+//----------------------------------------------------------------------------------------------------------------
 
 func CreateUsuario(w http.ResponseWriter, r *http.Request) {
 	db, erro := config.Connect()
