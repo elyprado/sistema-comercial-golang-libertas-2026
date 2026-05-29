@@ -70,6 +70,7 @@ func GetComprasById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(compra)
 }
 
+// CreateCompras é responsável por criar uma nova compra no banco de dados. Ele se conecta ao banco de dados, decodifica os dados da compra enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e as datas, e depois executa uma consulta SQL para inserir os dados da nova compra na tabela de compras. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON.
 func CreateCompras(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
@@ -114,19 +115,41 @@ func CreateCompras(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Sucesso"})
 }
 
+// UpdateCompras é responsável por atualizar uma compra existente no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, decodifica os dados da compra enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e as datas, e depois executa uma consulta SQL para atualizar os dados da compra na tabela de compras onde o ID corresponde ao valor fornecido. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON.
 func UpdateCompras(w http.ResponseWriter, r *http.Request) {
-	db, err := config.Connect()
+	db, erro := config.Connect()
+	if erro != nil {
+		http.Error(w, erro.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+	params := mux.Vars(r)
+	id := params["id"]
+	var compra models.Compras
+	err := json.NewDecoder(r.Body).Decode(&compra)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	query := "UPDATE compra SET date=?, idfornecedor=?, data_vencimento=? WHERE idcompra=?"
+	result, err := db.Exec(query, compra.Data, compra.IdFornecedor, compra.DataVencimento, id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer db.Close()
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Compra não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Compra atualizada com sucesso"})
 }
 
 func DeleteCompras(w http.ResponseWriter, r *http.Request) {
-	db, err := config.Connect()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	db, erro := config.Connect()
+	if erro != nil {
+		http.Error(w, erro.Error(), http.StatusInternalServerError)
 		return
 	}
 	defer db.Close()
