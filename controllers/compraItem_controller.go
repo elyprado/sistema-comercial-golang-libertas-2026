@@ -78,19 +78,19 @@ func CreateCompraItem(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	var compra models.CompraItem
-	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
+	var compraItem models.CompraItem
+	if err := json.NewDecoder(r.Body).Decode(&compraItem); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	if compra.IdCompra == nil || compra.IdProduto == nil || compra.Quantidade == nil || *compra.Quantidade <= 0 || (*compra.CustoUnitario).LessThanOrEqual(decimal.Zero) || (*compra.CustoTotal).LessThanOrEqual(decimal.Zero) {
+	if compraItem.IdCompra == nil || compraItem.IdProduto == nil || compraItem.Quantidade == nil || *compraItem.Quantidade <= 0 || (*compraItem.CustoUnitario).LessThanOrEqual(decimal.Zero) || (*compraItem.CustoTotal).LessThanOrEqual(decimal.Zero) {
 		http.Error(w, "Campos obrigatórios faltando ou inválidos", http.StatusBadRequest)
 		return
 	}
 
 	query := "INSERT INTO compraItem (idcompra, idproduto, quantidade, custo_unitario, custo_total) VALUES (?, ?, ?, ?, ?)"
-	_, err = db.Exec(query, compra.IdCompra, compra.IdProduto, compra.Quantidade, compra.CustoUnitario, compra.CustoTotal)
+	_, err = db.Exec(query, compraItem.IdCompra, compraItem.IdProduto, compraItem.Quantidade, compraItem.CustoUnitario, compraItem.CustoTotal)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -100,6 +100,7 @@ func CreateCompraItem(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Sucesso"})
 }
 
+// UpdateCompraItem é responsável por atualizar um item de compra existente no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, decodifica os dados do item de compra enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e depois executa uma consulta SQL para atualizar os dados do item de compra na tabela de itens de compra onde o ID corresponde ao valor fornecido. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON.
 func UpdateCompraItem(w http.ResponseWriter, r *http.Request) {
 	db, erro := config.Connect()
 	if erro != nil {
@@ -107,6 +108,28 @@ func UpdateCompraItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+	var compraItem models.CompraItem
+	err := json.NewDecoder(r.Body).Decode(&compraItem)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	query := "UPDATE compraItem SET idcompra=?, idproduto=?, quantidade=?, custo_unitario=?, custo_total=? WHERE idcompraitem=?"
+	result, err := db.Exec(query, compraItem.IdCompra, compraItem.IdProduto, compraItem.Quantidade, compraItem.CustoUnitario, compraItem.CustoTotal, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Compra não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Compra atualizada com sucesso"})
 }
 
 func DeleteCompraItem(w http.ResponseWriter, r *http.Request) {
@@ -116,4 +139,5 @@ func DeleteCompraItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
+
 }
