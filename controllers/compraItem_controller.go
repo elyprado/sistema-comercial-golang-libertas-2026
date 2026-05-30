@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/shopspring/decimal"
 )
 
 // Controller para a entidade CompraItem, responsável por lidar com as requisições relacionadas a itens de compra, como criar, ler, atualizar e deletar registros de itens de compra no banco de dados. Cada função se conecta ao banco de dados, executa a operação necessária e retorna a resposta apropriada ao cliente.
@@ -68,6 +69,7 @@ func GetCompraItemById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(compraItem)
 }
 
+// CreateCompraItem é responsável por criar um novo item de compra no banco de dados. Ele se conecta ao banco de dados, decodifica os dados do item de compra enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e depois executa uma consulta SQL para inserir os dados do novo item de compra na tabela de itens de compra. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON.
 func CreateCompraItem(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()
 	if err != nil {
@@ -75,6 +77,27 @@ func CreateCompraItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer db.Close()
+
+	var compra models.CompraItem
+	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if compra.IdCompra == nil || compra.IdProduto == nil || compra.Quantidade == nil || *compra.Quantidade <= 0 || (*compra.CustoUnitario).LessThanOrEqual(decimal.Zero) || (*compra.CustoTotal).LessThanOrEqual(decimal.Zero) {
+		http.Error(w, "Campos obrigatórios faltando ou inválidos", http.StatusBadRequest)
+		return
+	}
+
+	query := "INSERT INTO compraItem (idcompra, idproduto, quantidade, custo_unitario, custo_total) VALUES (?, ?, ?, ?, ?)"
+	_, err = db.Exec(query, compra.IdCompra, compra.IdProduto, compra.Quantidade, compra.CustoUnitario, compra.CustoTotal)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Sucesso"})
 }
 
 func UpdateCompraItem(w http.ResponseWriter, r *http.Request) {
