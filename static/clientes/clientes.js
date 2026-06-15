@@ -126,7 +126,6 @@ async function carregarClientes() {
         <div class="w-10 h-10 rounded-full border-4 border-gray-100 border-t-gray-900 animate-spin mb-4"></div>
         <p class="text-gray-500 font-medium text-sm">Buscando dados...</p>
       </div>`;
-
     try {
         const r = await fetch(API);
         if (!r.ok) throw new Error(await r.text());
@@ -162,7 +161,7 @@ async function carregarClientes() {
                   <tr class="hover:bg-gray-50/50 transition-colors group">
                     <td class="px-6 py-4 text-sm text-gray-500">${c.idcliente || '-'}</td>
                     <td class="px-6 py-4">
-                      <div class="text-sm font-medium text-gray-900">${c.nome || ''}</div>
+                      <div class="text-sm font-medium text-gray-900">${c.nome || '-'}</div>
                       <div class="text-xs text-gray-500 mt-0.5">${c.cpf || 'Sem CPF'}</div>
                     </td>
                     <td class="px-6 py-4">
@@ -171,23 +170,28 @@ async function carregarClientes() {
                     </td>
                     <td class="px-6 py-4">
                       <div class="text-sm text-gray-700">${c.cidade || '-'}</div>
-                      <div class="text-xs text-gray-500 mt-0.5">${c.uf || ''}</div>
+                      <div class="text-xs text-gray-500 mt-0.5">${c.uf || '-'}</div>
                     </td>
                     <td class="px-6 py-4 text-right text-sm font-medium">
-                      <div class="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onclick='abrirFormulario(${JSON.stringify(c)})' class="text-gray-400 hover:text-black transition-colors">Editar</button>
-                        <button onclick="deletar(${c.idcliente})" class="text-gray-400 hover:text-red-600 transition-colors">Excluir</button>
+                      <div class="flex justify-end gap-3">
+                        <button onclick='abrirFormulario(${JSON.stringify(c)})' class="text-gray-400 hover:text-black transition-colors">
+                            <i data-lucide="pencil" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="deletar(${c.idcliente})" class="text-gray-400 hover:text-red-600 transition-colors">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> 
+                        </button>
                       </div>
                     </td>
                   </tr>`).join('')}
               </tbody>
             </table>
           </div>`;
+        lucide.createIcons();
     } catch (e) {
         // Mensagem de erro
         wrap.innerHTML = `
           <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mb-4">
+            <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text   -red-500 mb-4">
               <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <h3 class="text-base font-medium text-gray-900">Falha de Conexão</h3>
