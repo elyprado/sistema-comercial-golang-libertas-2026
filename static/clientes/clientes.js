@@ -165,10 +165,16 @@ async function carregarClientes() {
                       <div class="text-sm font-medium text-gray-900">${c.nome || '-'}</div>
                     </td>
                     <td class="px-6 py-4">
-                      <div class="text-sm text-gray-900">${c.cpf || '-'}</div>
+                      <div class="text-sm text-gray-900">
+                        ${c.cpf ? c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-'}
+                      </div>
                     </td>
                     <td class="px-6 py-4">
-                      <div class="text-sm text-gray-700">${c.telefone || '-'}</div>
+                      <div class="text-sm text-gray-700">
+                        ${c.telefone
+                        ? c.telefone.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3')
+                        : '-'}
+                      </div>
                     </td>
                     <td class="px-6 py-4">
                       <div class="text-sm text-gray-700">${c.cidade || '-'}</div>
