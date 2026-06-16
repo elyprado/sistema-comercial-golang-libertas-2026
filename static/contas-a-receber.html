@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contas a Receber | Sistema Comercial</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+  <style>
+    body {
+      background: #f4f7f4;
+      color: #1d2722;
+    }
+
+    .topbar {
+      background: linear-gradient(90deg, #0a432c, #0f5f3e);
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(15, 95, 62, 0.22);
+    }
+
+    .card-custom {
+      border: 1px solid #d8e1da;
+      border-radius: 16px;
+      box-shadow: 0 8px 20px rgba(22, 38, 28, 0.06);
+    }
+
+    .btn-main {
+      background: #0f5f3e;
+      color: #fff;
+      border: none;
+    }
+
+    .btn-main:hover {
+      background: #0a432c;
+      color: #fff;
+    }
+
+    .linha-paga td {
+      background: #d9f7df !important;
+      color: #14532d;
+      font-weight: 600;
+    }
+
+    .badge-aberto {
+      background: #fff3cd;
+      color: #664d03;
+    }
+
+    .badge-pago {
+      background: #198754;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar py-3 mb-4">
+    <div class="container d-flex justify-content-between align-items-center gap-3">
+      <div>
+        <h1 class="h4 mb-0 fw-bold">Contas a Receber</h1>
+        <small>Grupo 7 - Cadastro, consulta, filtro por vencimento e baixa</small>
+      </div>
+      <a href="index.html" class="btn btn-light btn-sm">Voltar ao menu</a>
+    </div>
+  </header>
+
+  <main class="container mb-5">
+    <div class="row g-4">
+      <div class="col-lg-4">
+        <div class="card card-custom p-3">
+          <h2 class="h5 fw-bold mb-3">Nova conta a receber</h2>
+
+          <form id="formConta" onsubmit="salvarConta(event)">
+            <div class="mb-3">
+              <label for="txtIdCliente" class="form-label">ID do cliente</label>
+              <input type="number" min="1" class="form-control" id="txtIdCliente" required>
+              <div class="form-text">Informe o idcliente cadastrado no banco.</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtData" class="form-label">Data</label>
+              <input type="date" class="form-control" id="txtData" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtDataVencimento" class="form-label">Data de vencimento</label>
+              <input type="date" class="form-control" id="txtDataVencimento" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="txtValor" class="form-label">Valor</label>
+              <input type="number" min="0.01" step="0.01" class="form-control" id="txtValor" required>
+            </div>
+
+            <button type="submit" class="btn btn-main w-100">Salvar conta</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="col-lg-8">
+        <div class="card card-custom p-3 mb-3">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-6">
+              <label for="filtroVencimento" class="form-label">Filtrar por data de vencimento</label>
+              <input type="date" class="form-control" id="filtroVencimento">
+            </div>
+            <div class="col-md-6 d-flex gap-2">
+              <button class="btn btn-main" onclick="carregarContas()">Filtrar</button>
+              <button class="btn btn-outline-secondary" onclick="limparFiltro()">Limpar</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-custom p-3">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h5 fw-bold mb-0">Registros cadastrados</h2>
+            <button class="btn btn-outline-success btn-sm" onclick="carregarContas()">Atualizar</button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Cliente</th>
+                  <th>Data</th>
+                  <th>Vencimento</th>
+                  <th>Valor</th>
+                  <th>Pagamento</th>
+                  <th>Status</th>
+                  <th>Acoes</th>
+                </tr>
+              </thead>
+              <tbody id="dadosContas">
+                <tr><td colspan="8">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_CONTAS = "/contas-a-receber";
+
+    function hoje() {
+      return new Date().toISOString().substring(0, 10);
+    }
+
+    function formatarData(data) {
+      if (!data) return "-";
+      const partes = data.split("-");
+      if (partes.length !== 3) return data;
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+
+    function formatarValor(valor) {
+      return Number(valor || 0).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
+    }
+
+    async function salvarConta(event) {
+      event.preventDefault();
+
+      const conta = {
+        idcliente: Number(document.getElementById("txtIdCliente").value),
+        data: document.getElementById("txtData").value,
+        data_vencimento: document.getElementById("txtDataVencimento").value,
+        valor: Number(document.getElementById("txtValor").value)
+      };
+
+      const resp = await fetch(API_CONTAS, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(conta)
+      });
+
+      if (resp.ok) {
+        alert("Conta a receber cadastrada com sucesso!");
+        document.getElementById("formConta").reset();
+        document.getElementById("txtData").value = hoje();
+        carregarContas();
+      } else {
+        const erro = await resp.text();
+        alert("Erro ao cadastrar conta: " + erro);
+      }
+    }
+
+    async function carregarContas() {
+      const tbody = document.getElementById("dadosContas");
+      const filtro = document.getElementById("filtroVencimento").value;
+      let url = API_CONTAS;
+
+      if (filtro) {
+        url += `?data_vencimento=${encodeURIComponent(filtro)}`;
+      }
+
+      tbody.innerHTML = `<tr><td colspan="8">Carregando...</td></tr>`;
+
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) {
+          const erro = await resp.text();
+          tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro ao carregar: ${erro}</td></tr>`;
+          return;
+        }
+
+        const contas = await resp.json();
+        tbody.innerHTML = "";
+
+        if (!contas || contas.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="text-center">Nenhuma conta encontrada.</td></tr>`;
+          return;
+        }
+
+        for (const conta of contas) {
+          const pago = !!conta.data_pagamento;
+          const cliente = conta.nome_cliente ? `${conta.idcliente} - ${conta.nome_cliente}` : conta.idcliente;
+          const status = pago
+            ? `<span class="badge badge-pago">Pago</span>`
+            : `<span class="badge badge-aberto">Em aberto</span>`;
+          const botaoBaixar = pago
+            ? `<button class="btn btn-secondary btn-sm" disabled>Baixado</button>`
+            : `<button class="btn btn-success btn-sm" onclick="baixarConta(${conta.idcontaareceber})">Baixar</button>`;
+
+          tbody.innerHTML += `
+            <tr class="${pago ? "linha-paga" : ""}">
+              <td>${conta.idcontaareceber}</td>
+              <td>${cliente}</td>
+              <td>${formatarData(conta.data)}</td>
+              <td>${formatarData(conta.data_vencimento)}</td>
+              <td>${formatarValor(conta.valor)}</td>
+              <td>${formatarData(conta.data_pagamento)}</td>
+              <td>${status}</td>
+              <td>${botaoBaixar}</td>
+            </tr>`;
+        }
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-danger">Erro de conexao com o servidor.</td></tr>`;
+      }
+    }
+
+    async function baixarConta(idcontaareceber) {
+      if (!confirm("Deseja realmente baixar esta conta a receber?")) {
+        return;
+      }
+
+      const resp = await fetch(`${API_CONTAS}/${idcontaareceber}/baixar`, {
+        method: "PUT"
+      });
+
+      if (resp.ok) {
+        alert("Conta baixada com sucesso!");
+        carregarContas();
+      } else {
+        const erro = await resp.text();
+        alert("Erro ao baixar conta: " + erro);
+      }
+    }
+
+    function limparFiltro() {
+      document.getElementById("filtroVencimento").value = "";
+      carregarContas();
+    }
+
+    document.getElementById("txtData").value = hoje();
+    carregarContas();
+  </script>
+</body>
+</html>
