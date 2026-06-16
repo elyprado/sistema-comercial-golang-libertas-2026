@@ -10,4 +10,6 @@ func SetupContasPagarRoutes(router *mux.Router) {
 	router.HandleFunc("/contas-pagar", controllers.CreateContaPagar).Methods("POST")
 	router.HandleFunc("/contas-pagar", controllers.GetContasPagar).Methods("GET")
 	router.HandleFunc("/contas-pagar/{id}", controllers.GetContasPagarById).Methods("GET")
+	router.HandleFunc("/contas-pagar/{id}", controllers.UpdateContaPagar).Methods("PUT")
+	router.HandleFunc("/contas-pagar/{id}", controllers.DeleteContaPagar).Methods("DELETE")
 }

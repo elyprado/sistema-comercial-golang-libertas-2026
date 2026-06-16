@@ -102,3 +102,67 @@ func GetContasPagarById(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(contasPagar)
 }
+
+func UpdateContaPagar(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	var contasPagar models.ContasPagarRequest
+
+	err = json.NewDecoder(r.Body).Decode(&contasPagar)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query := "UPDATE contas_pagar SET id_fornecedor=?, data=?, data_vencimento=?, valor=? WHERE id_contas_pagar=?"
+
+	result, err := db.Exec(query, contasPagar.IDFornecedor, contasPagar.Data, contasPagar.DataVencimento, contasPagar.Valor, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Conta a pagar não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Conta a pagar atualizada com sucesso"})
+}
+
+func DeleteContaPagar(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	query := "DELETE FROM contas_pagar WHERE id_contas_pagar=?"
+
+	result, err := db.Exec(query, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Conta a pagar não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Conta a pagar removida com sucesso"})
+}
