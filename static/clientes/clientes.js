@@ -151,6 +151,7 @@ async function carregarClientes() {
                 <tr class="border-b border-gray-200 bg-gray-50/50">
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">ID</th>
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">Cliente</th>
+                  <th class="px-6 py-4 text-sm font-semibold text-gray-700">Documento</th>
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">Contato</th>
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">Localidade</th>
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-right">Ações</th>
@@ -162,11 +163,12 @@ async function carregarClientes() {
                     <td class="px-6 py-4 text-sm text-gray-500">${c.idcliente || '-'}</td>
                     <td class="px-6 py-4">
                       <div class="text-sm font-medium text-gray-900">${c.nome || '-'}</div>
-                      <div class="text-xs text-gray-500 mt-0.5">${c.cpf || 'Sem CPF'}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                      <div class="text-sm text-gray-900">${c.cpf || '-'}</div>
                     </td>
                     <td class="px-6 py-4">
                       <div class="text-sm text-gray-700">${c.telefone || '-'}</div>
-                      <div class="text-xs text-gray-500 mt-0.5">${c.email || '-'}</div>
                     </td>
                     <td class="px-6 py-4">
                       <div class="text-sm text-gray-700">${c.cidade || '-'}</div>
@@ -191,7 +193,7 @@ async function carregarClientes() {
         // Mensagem de erro
         wrap.innerHTML = `
           <div class="flex flex-col items-center justify-center py-20 text-center">
-            <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text   -red-500 mb-4">
+            <div class="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-red-500 mb-4">
               <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             </div>
             <h3 class="text-base font-medium text-gray-900">Falha de Conexão</h3>
