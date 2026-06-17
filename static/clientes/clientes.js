@@ -154,7 +154,7 @@ async function carregarClientes() {
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">Documento</th>
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">Contato</th>
                   <th class="px-6 py-4 text-sm font-semibold text-gray-700">Localidade</th>
-                  <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-right">Ações</th>
+                  <th class="px-6 py-4 text-sm font-semibold text-gray-700 text-right"></th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100 bg-white">
@@ -162,10 +162,10 @@ async function carregarClientes() {
                   <tr class="hover:bg-gray-50/50 transition-colors group">
                     <td class="px-6 py-4 text-sm text-gray-500">${c.idcliente || '-'}</td>
                     <td class="px-6 py-4">
-                      <div class="text-sm font-medium text-gray-900">${c.nome || '-'}</div>
+                      <div class="text-sm font-medium text-gray-700">${c.nome || '-'}</div>
                     </td>
                     <td class="px-6 py-4">
-                      <div class="text-sm text-gray-900">
+                      <div class="text-sm text-gray-700">
                         ${c.cpf ? c.cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4') : '-'}
                       </div>
                     </td>
