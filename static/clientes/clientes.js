@@ -233,5 +233,6 @@ document.getElementById('f-uf').addEventListener('input', function () {
     this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '');
 });
 
-// Carrega a lista assim que abrir a página
+// Renderiza os ícones estáticos e carrega a lista assim que abrir a página
+lucide.createIcons();
 carregarClientes();

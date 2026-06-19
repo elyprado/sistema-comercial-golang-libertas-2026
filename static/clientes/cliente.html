@@ -62,13 +62,17 @@
                     <h1 class="text-3xl font-semibold tracking-tight text-gray-900">Clientes</h1>
                     <p class="text-gray-500 mt-1 text-sm">Gerenciamento de base de contatos.</p>
                 </div>
-                <button onclick="abrirFormulario()"
-                    class="bg-gray-900 hover:bg-gray-800 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors shadow-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    Novo cliente
-                </button>
+                <div class="flex items-center gap-3">
+                    <a href="../index.html"
+                        class="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-medium px-4 py-2.5 rounded-lg text-sm transition-colors">
+                        Menu principal
+                    </a>
+                    <button onclick="abrirFormulario()"
+                        class="bg-gray-900 hover:bg-gray-800 text-white font-medium px-5 py-2.5 rounded-lg text-sm transition-colors shadow-sm flex items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Novo cliente
+                    </button>
+                </div>
             </header>
 
             <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-h-[400px]">
