@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/shopspring/decimal"
 )
 
 //Controller para a entidade Compras, responsável por lidar com as requisições relacionadas a compras, como criar, ler, atualizar e deletar registros de compras no banco de dados. Cada função se conecta ao banco de dados, executa a operação necessária e retorna a resposta apropriada ao cliente.
@@ -235,4 +236,108 @@ func GetProdutosDisponiveis(w http.ResponseWriter, r *http.Request) {
 		produtos = append(produtos, produto)
 	}
 	json.NewEncoder(w).Encode(produtos)
+}
+
+// CreateCompraComItens é responsável por criar uma nova compra junto com seus itens associados no banco de dados. Ele se conecta ao banco de dados, decodifica os dados da compra e dos itens enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e as datas, e depois executa uma transação SQL para inserir os dados da nova compra na tabela de compras e os itens relacionados na tabela de itens de compra. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON junto com o ID da compra criada.
+
+func CreateCompraComItens(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, "Erro ao conectar no banco de dados", http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Decodificando o payload que vem do front-end
+	var payload models.CompraComItensRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Erro ao ler os dados enviados", http.StatusBadRequest)
+		return
+	}
+
+	// Verifica os campos da compra
+	if payload.Data == nil || payload.IdFornecedor == nil || payload.DataVencimento == nil {
+		http.Error(w, "Campos 'data', 'idfornecedor' e 'data_vencimento' são obrigatórios", http.StatusBadRequest)
+		return
+	}
+
+	// Converter as strings de data para time
+	dataConvertida, err := time.Parse("2006-01-02", *payload.Data)
+	if err != nil {
+		http.Error(w, "Formato de 'data' inválido. Use YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	vencimentoConvertido, err := time.Parse("2006-01-02", *payload.DataVencimento)
+	if err != nil {
+		http.Error(w, "Formato de 'data_vencimento' inválido. Use YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	// Verifica se tem itens na compra
+	if len(payload.Itens) == 0 {
+		http.Error(w, "A compra precisa ter pelo menos um item", http.StatusBadRequest)
+		return
+	}
+
+	// AQUI É O PULO DO GATO: Iniciando a transação
+	tx, err := db.Begin()
+	if err != nil {
+		http.Error(w, "Erro ao iniciar transação no banco", http.StatusInternalServerError)
+		return
+	}
+
+	// 1. Inserindo a Compra
+	queryCompra := "INSERT INTO compra (date, idfornecedor, data_vencimento) VALUES (?, ?, ?)"
+	resultado, err := tx.Exec(queryCompra, dataConvertida, payload.IdFornecedor, vencimentoConvertido)
+	if err != nil {
+		tx.Rollback() // Deu ruim, desfaz tudo
+		http.Error(w, "Erro ao salvar a compra: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// 2. Pegando o ID da compra recém-criada
+	compraID, err := resultado.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, "Erro ao recuperar o ID da compra", http.StatusInternalServerError)
+		return
+	}
+
+	// 3. Loop para inserir os Itens da Compra
+	queryItem := "INSERT INTO compraItem (idcompra, idproduto, quantidade, custo_unitario, custo_total) VALUES (?, ?, ?, ?, ?)"
+
+	for _, item := range payload.Itens {
+		// Validações do item (sua lógica reaproveitada)
+		if item.IdProduto == nil || item.Quantidade == nil || *item.Quantidade <= 0 ||
+			item.CustoUnitario == nil || (*item.CustoUnitario).LessThanOrEqual(decimal.Zero) ||
+			item.CustoTotal == nil || (*item.CustoTotal).LessThanOrEqual(decimal.Zero) {
+			tx.Rollback()
+			http.Error(w, "Campos de itens faltando ou com valores inválidos", http.StatusBadRequest)
+			return
+		}
+
+		// TODO: Validação matemática do custo unitário * qtd == custo total pode entrar aqui antes do insert
+
+		// Inserindo o item atrelando ao ID da compra que pegamos ali em cima
+		_, err = tx.Exec(queryItem, compraID, item.IdProduto, item.Quantidade, item.CustoUnitario, item.CustoTotal)
+		if err != nil {
+			tx.Rollback() // Se um item falhar, a transação aborta inteira
+			http.Error(w, "Erro ao salvar item da compra: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Se chegou até aqui, deu tudo certinho. Pode commitar a fita no banco.
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Erro ao finalizar a transação", http.StatusInternalServerError)
+		return
+	}
+
+	// Resposta de sucesso pro front
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":   "Compra e itens criados com sucesso, mano!",
+		"id_compra": compraID,
+	})
 }

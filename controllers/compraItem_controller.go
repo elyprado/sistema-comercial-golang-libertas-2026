@@ -84,6 +84,8 @@ func CreateCompraItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO: Criar verificação para garantir que o valor total seja igual ao valor unitário multiplicado pela quantidade
+
 	if compraItem.IdCompra == nil || compraItem.IdProduto == nil || compraItem.Quantidade == nil || *compraItem.Quantidade <= 0 || (*compraItem.CustoUnitario).LessThanOrEqual(decimal.Zero) || (*compraItem.CustoTotal).LessThanOrEqual(decimal.Zero) {
 		http.Error(w, "Campos obrigatórios faltando ou inválidos", http.StatusBadRequest)
 		return
