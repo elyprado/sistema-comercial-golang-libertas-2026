@@ -2,22 +2,27 @@ const API = '/fornecedores';
 let editandoId = null;
 const modalFornecedor = new bootstrap.Modal(document.getElementById('modalFornecedor'));
 
+const campos = ['txtNome', 'txtCnpj', 'txtTelefone', 'txtEmail',
+  'txtLogradouro', 'txtNumero', 'txtBairro', 'txtCidade', 'txtUf'];
+
 function limparForm() {
-  ['txtNome', 'txtCnpj', 'txtTelefone', 'txtEmail',
-    'txtLogradouro', 'txtNumero', 'txtBairro', 'txtCidade', 'txtUf']
-    .forEach(id => document.getElementById(id).value = '');
+  campos.forEach(id => {
+    document.getElementById(id).value = '';
+    limparErro(id);
+  });
 }
 
 function preencherForm(f) {
   document.getElementById('txtNome').value = f.nome ?? '';
-  document.getElementById('txtCnpj').value = f.cnpj ?? '';
-  document.getElementById('txtTelefone').value = f.telefone ?? '';
+  document.getElementById('txtCnpj').value = formatarCnpj(f.cnpj ?? '');
+  document.getElementById('txtTelefone').value = formatarTelefone(f.telefone ?? '');
   document.getElementById('txtEmail').value = f.email ?? '';
   document.getElementById('txtLogradouro').value = f.logradouro ?? '';
   document.getElementById('txtNumero').value = f.numero ?? '';
   document.getElementById('txtBairro').value = f.bairro ?? '';
   document.getElementById('txtCidade').value = f.cidade ?? '';
   document.getElementById('txtUf').value = f.uf ?? '';
+  campos.forEach(limparErro);
 }
 
 function novo() {
@@ -53,18 +58,68 @@ async function excluir(id) {
   }
 }
 
-async function salvar() {
-  const fornecedor = {
-    nome: document.getElementById('txtNome').value,
-    cnpj: document.getElementById('txtCnpj').value,
-    telefone: document.getElementById('txtTelefone').value,
-    email: document.getElementById('txtEmail').value,
-    logradouro: document.getElementById('txtLogradouro').value,
-    numero: document.getElementById('txtNumero').value,
-    bairro: document.getElementById('txtBairro').value,
-    cidade: document.getElementById('txtCidade').value,
-    uf: document.getElementById('txtUf').value
+function marcarErro(id) {
+  document.getElementById(id).classList.add('is-invalid');
+}
+
+function limparErro(id) {
+  document.getElementById(id).classList.remove('is-invalid');
+}
+
+function cnpjValido(cnpj) {
+  return /^\d{14}$/.test(cnpj);
+}
+
+function emailValido(email) {
+  if (!email) return true;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function validarForm(dados) {
+  let valido = true;
+
+  if (!dados.nome) {
+    marcarErro('txtNome');
+    valido = false;
+  }
+
+  if (!cnpjValido(dados.cnpj)) {
+    marcarErro('txtCnpj');
+    valido = false;
+  }
+
+  if (dados.telefone && ![10, 11].includes(dados.telefone.length)) {
+    marcarErro('txtTelefone');
+    valido = false;
+  }
+
+  if (!emailValido(dados.email)) {
+    marcarErro('txtEmail');
+    valido = false;
+  }
+
+  return valido;
+}
+
+function getForm() {
+  return {
+    nome: document.getElementById('txtNome').value.trim(),
+    cnpj: document.getElementById('txtCnpj').value.replace(/\D/g, ''),
+    telefone: document.getElementById('txtTelefone').value.replace(/\D/g, ''),
+    email: document.getElementById('txtEmail').value.trim(),
+    logradouro: document.getElementById('txtLogradouro').value.trim(),
+    numero: document.getElementById('txtNumero').value.replace(/\D/g, ''),
+    bairro: document.getElementById('txtBairro').value.trim(),
+    cidade: document.getElementById('txtCidade').value.trim(),
+    uf: document.getElementById('txtUf').value.trim()
   };
+}
+
+async function salvar() {
+  campos.forEach(limparErro);
+  const fornecedor = getForm();
+
+  if (!validarForm(fornecedor)) return;
 
   const metodo = editandoId ? 'PUT' : 'POST';
   const url = editandoId ? `${API}/${editandoId}` : API;
@@ -86,6 +141,19 @@ async function salvar() {
   }
 }
 
+function formatarCnpj(cnpj) {
+  const v = (cnpj || '').replace(/\D/g, '');
+  if (v.length !== 14) return cnpj || '';
+  return v.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+}
+
+function formatarTelefone(tel) {
+  const v = (tel || '').replace(/\D/g, '');
+  if (v.length === 11) return v.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  if (v.length === 10) return v.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  return tel || '';
+}
+
 async function carregaDados() {
   const tbody = document.getElementById('dados');
   tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4" style="max-width:none;">Carregando...</td></tr>';
@@ -104,12 +172,14 @@ async function carregaDados() {
     tbody.innerHTML = '';
     for (const f of data) {
       const cidadeUf = [f.cidade, f.uf].filter(Boolean).join(' / ') || '-';
+      const cnpjFmt = formatarCnpj(f.cnpj);
+      const telFmt = formatarTelefone(f.telefone);
       tbody.innerHTML += `
         <tr>
           <td class="ps-3 text-muted">${f.idfornecedor ?? '-'}</td>
           <td class="fw-semibold" title="${f.nome ?? ''}">${f.nome ?? '-'}</td>
-          <td title="${f.cnpj ?? ''}">${f.cnpj ?? '-'}</td>
-          <td title="${f.telefone ?? ''}">${f.telefone ?? '-'}</td>
+          <td title="${cnpjFmt}">${cnpjFmt || '-'}</td>
+          <td title="${telFmt}">${telFmt || '-'}</td>
           <td class="text-muted" title="${f.email ?? ''}">${f.email ?? '-'}</td>
           <td title="${cidadeUf}">${cidadeUf}</td>
           <td class="text-center col-acoes">
@@ -125,5 +195,37 @@ async function carregaDados() {
     document.getElementById('rodape').style.display = 'none';
   }
 }
+
+document.getElementById('txtCnpj').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '').slice(0, 14);
+  v = v.replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  this.value = v;
+  limparErro('txtCnpj');
+});
+
+document.getElementById('txtTelefone').addEventListener('input', function () {
+  let v = this.value.replace(/\D/g, '').slice(0, 11);
+  if (v.length > 10) {
+    v = v.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3');
+  } else if (v.length > 6) {
+    v = v.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3');
+  } else if (v.length > 2) {
+    v = v.replace(/(\d{2})(\d{0,4})/, '($1) $2');
+  } else if (v.length > 0) {
+    v = v.replace(/(\d{0,2})/, '($1');
+  }
+  this.value = v;
+  limparErro('txtTelefone');
+});
+
+document.getElementById('txtNumero').addEventListener('input', function () {
+  this.value = this.value.replace(/\D/g, '').slice(0, 10);
+});
+
+document.getElementById('txtNome').addEventListener('input', () => limparErro('txtNome'));
+document.getElementById('txtEmail').addEventListener('input', () => limparErro('txtEmail'));
 
 carregaDados();

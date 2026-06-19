@@ -159,19 +159,23 @@
           <div class="row g-3 mb-3">
             <div class="col-12 col-md-6">
               <label for="txtNome" class="form-label fw-semibold">Nome</label>
-              <input type="text" class="form-control" id="txtNome" placeholder="Razão social ou nome fantasia">
+              <input type="text" class="form-control" id="txtNome" placeholder="Razão social ou nome fantasia" maxlength="120" required>
+              <div class="invalid-feedback" id="errNome">Informe o nome do fornecedor.</div>
             </div>
             <div class="col-12 col-md-6">
               <label for="txtCnpj" class="form-label fw-semibold">CNPJ</label>
-              <input type="text" class="form-control" id="txtCnpj" placeholder="00.000.000/0000-00">
+              <input type="text" class="form-control" id="txtCnpj" placeholder="00.000.000/0000-00" inputmode="numeric" maxlength="18" required>
+              <div class="invalid-feedback" id="errCnpj">Informe um CNPJ válido (14 dígitos).</div>
             </div>
             <div class="col-12 col-md-6">
               <label for="txtTelefone" class="form-label fw-semibold">Telefone</label>
-              <input type="text" class="form-control" id="txtTelefone" placeholder="(00) 00000-0000">
+              <input type="text" class="form-control" id="txtTelefone" placeholder="(00) 00000-0000" inputmode="numeric" maxlength="15">
+              <div class="invalid-feedback" id="errTelefone">Telefone inválido.</div>
             </div>
             <div class="col-12 col-md-6">
               <label for="txtEmail" class="form-label fw-semibold">E-mail</label>
-              <input type="email" class="form-control" id="txtEmail" placeholder="contato@empresa.com">
+              <input type="email" class="form-control" id="txtEmail" placeholder="contato@empresa.com" maxlength="120">
+              <div class="invalid-feedback" id="errEmail">Informe um e-mail válido.</div>
             </div>
           </div>
 
@@ -183,7 +187,7 @@
             </div>
             <div class="col-12 col-md-4">
               <label for="txtNumero" class="form-label fw-semibold">Número</label>
-              <input type="text" class="form-control" id="txtNumero" placeholder="Nº">
+              <input type="text" class="form-control" id="txtNumero" placeholder="Nº" inputmode="numeric" maxlength="10">
             </div>
             <div class="col-12 col-md-4">
               <label for="txtBairro" class="form-label fw-semibold">Bairro</label>
