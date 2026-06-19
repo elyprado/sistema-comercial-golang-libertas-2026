@@ -15,6 +15,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Representa os dados esperados na criação de uma venda.
+// Inclui informações do cabeçalho da venda e os itens vinculados.
 type vendaPayload struct {
 	Data           string             `json:"data"`
 	Idcliente      int                `json:"idcliente"`
@@ -23,6 +25,7 @@ type vendaPayload struct {
 	Items          []models.VendaItem `json:"items"`
 }
 
+// Tenta converter diferentes formatos de string em time.Time.
 func parseDateTime(value string) (time.Time, error) {
 	layouts := []string{
 		"2006-01-02",
@@ -39,6 +42,7 @@ func parseDateTime(value string) (time.Time, error) {
 	return time.Time{}, fmt.Errorf("formato de data inválido: %s", value)
 }
 
+// Trata a criação de uma nova venda e seus itens em uma transação.
 func CreateVenda(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
@@ -56,6 +60,7 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Validação mínima dos campos obrigatórios.
 	if payload.Idcliente == 0 || payload.Idvendedor == 0 || payload.Data == "" || payload.DataVencimento == "" {
 		http.Error(w, "Dados incompletos da venda", http.StatusBadRequest)
 		return
@@ -86,7 +91,7 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		if p := recover(); p != nil {
 			tx.Rollback()
-			http.Error(w, fmt.Sprintf("Erro interno"), http.StatusInternalServerError)
+			http.Error(w, "Erro interno", http.StatusInternalServerError)
 		}
 	}()
 
@@ -105,6 +110,7 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Insere cada item da venda usando a mesma transação.
 	insertItem := "INSERT INTO vendaitem (idvenda, idproduto, quantidade, valor_unitario, valor_total) VALUES (?, ?, ?, ?, ?)"
 	for index, item := range payload.Items {
 		if item.Idproduto == 0 || item.Quantidade == 0 || item.ValorUnitario == 0 {
@@ -130,6 +136,7 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]any{"message": "Venda registrada com sucesso", "idvenda": vendaID})
 }
 
+// Retorna vendas com filtros opcionais de data.
 func GetVendas(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
@@ -196,6 +203,7 @@ func GetVendas(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(vendas)
 }
 
+// Retorna uma venda específica e seus itens.
 func GetVendaById(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
