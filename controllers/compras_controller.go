@@ -42,6 +42,57 @@ func GetCompras(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(compras)
 }
 
+// GetComprasComItens busca todas as compras com seus itens associados
+func GetComprasComItens(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Buscar todas as compras
+	rowsCompras, err := db.Query("SELECT idcompra, date, idfornecedor, data_vencimento FROM compra ORDER BY idcompra")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rowsCompras.Close()
+
+	var comprasComItens []models.ComprasComItens
+
+	for rowsCompras.Next() {
+		var compra models.ComprasComItens
+		if err := rowsCompras.Scan(&compra.IdCompra, &compra.Data, &compra.IdFornecedor, &compra.DataVencimento); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Buscar itens dessa compra
+		rowsItens, err := db.Query("SELECT idcompraitem, idcompra, idproduto, quantidade, custo_unitario, custo_total FROM compraItem WHERE idcompra = ?", compra.IdCompra)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rowsItens.Close()
+
+		compra.Itens = []models.CompraItem{}
+		for rowsItens.Next() {
+			var item models.CompraItem
+			if err := rowsItens.Scan(&item.IdCompraItem, &item.IdCompra, &item.IdProduto, &item.Quantidade, &item.CustoUnitario, &item.CustoTotal); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			compra.Itens = append(compra.Itens, item)
+		}
+
+		comprasComItens = append(comprasComItens, compra)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comprasComItens)
+}
+
 // GetComprasById é responsável por buscar uma compra específica no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, executa uma consulta SQL para selecionar os campos relevantes da tabela de compras onde o ID corresponde ao valor fornecido, e depois codifica o resultado em JSON para enviar de volta ao cliente.
 func GetComprasById(w http.ResponseWriter, r *http.Request) {
 	db, err := config.Connect()

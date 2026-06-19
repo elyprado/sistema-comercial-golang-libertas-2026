@@ -522,7 +522,18 @@
 		}
 
 		function parseNumero(valor) {
-			const numero = Number(String(valor).replace(",", "."));
+			if (valor === undefined || valor === null) return 0;
+			let texto = String(valor).trim();
+			
+			// Se tiver ponto e vírgula (ex: 2.500,00), remove o ponto e troca a vírgula por ponto
+			if (texto.includes(".") && texto.includes(",")) {
+				texto = texto.replace(/\./g, "").replace(",", ".");
+			} else if (texto.includes(",")) {
+				// Se só tiver vírgula (ex: 12,5), troca por ponto
+				texto = texto.replace(",", ".");
+			}
+			
+			const numero = Number(texto);
 			return Number.isFinite(numero) ? numero : 0;
 		}
 
@@ -535,9 +546,19 @@
 		}
 
 		function calcularTotalItem(item) {
-			return parseNumero(item.quantidade) * parseNumero(item.custo_unitario);
+			if (!item) return 0;
+			
+			// Pega o custo total direto se ele existir
+			const custoTotalDireto = item.custo_total ?? item.custototal;
+			if (custoTotalDireto !== undefined && custoTotalDireto !== null) {
+				return parseNumero(custoTotalDireto);
+			}
+			
+			// Senão, calcula manualmente
+			const qtd = parseNumero(item.quantidade ?? item.qtd);
+			const custoUni = parseNumero(item.custo_unitario ?? item.custounitario);
+			return qtd * custoUni;
 		}
-
 		function obterId(item, nomes) {
 			for (const nome of nomes) {
 				if (item[nome] !== undefined && item[nome] !== null) {
@@ -664,17 +685,14 @@
 		}
 
 		function extrairItensCompra(compra) {
-			const itens = compra.itens || compra.compraItens || compra.compra_itens || compra.items || [];
+			const itens = compra.itens || compra.compraItens || compra.compra_itens || compra.items || compra.listaItens || [];
 			return Array.isArray(itens) ? itens : [];
 		}
 
 		function calcularTotalCompra(compra) {
 			const itens = extrairItensCompra(compra);
 			if (itens.length) {
-				return itens.reduce((acumulado, item) => acumulado + parseNumero(item.custo_total ?? (item.quantidade * item.custo_unitario)), 0);
-			}
-			if (compra.total_compra !== undefined) {
-				return parseNumero(compra.total_compra);
+				return itens.reduce((acumulado, item) => acumulado + calcularTotalItem(item), 0);
 			}
 			return 0;
 		}
@@ -697,7 +715,7 @@
 				const idCompra = obterId(compra, ["idcompra", "id", "compra_id"]);
 				const fornecedorId = obterId(compra, ["idfornecedor", "fornecedor_id"]);
 				const dataCompra = compra.data ?? compra.date ?? compra.data_compra ?? "";
-				const dataVencimento = compra.data_vencimento ?? compra.vencimento ?? "";
+				const dataVencimento = compra.datavencimento ?? compra.data_vencimento ?? compra.vencimento ?? "";
 				const itens = extrairItensCompra(compra);
 				const total = calcularTotalCompra(compra);
 
@@ -717,7 +735,23 @@
 			});
 		}
 
+		function validarIntervaloData() {
+			const inicio = document.getElementById("txtFiltroInicio").value;
+			const fim = document.getElementById("txtFiltroFim").value;
+			
+			if (inicio && fim && inicio > fim) {
+				alert("A data inicial não pode ser maior que a data final!");
+				document.getElementById("txtFiltroInicio").value = "";
+				return false;
+			}
+			return true;
+		}
+
 		function aplicarFiltro() {
+			if (!validarIntervaloData()) {
+				return;
+			}
+
 			const inicio = document.getElementById("txtFiltroInicio").value;
 			const fim = document.getElementById("txtFiltroFim").value;
 
@@ -773,16 +807,45 @@
 			empty.classList.add("d-none");
 
 			try {
+				// 1. Busca a lista principal de compras
 				const resposta = await fetch(`${apiBase}/compras`);
-				if (!resposta.ok) {
-					throw new Error("Falha ao carregar compras");
-				}
+				if (!resposta.ok) throw new Error("Falha ao carregar compras");
 
 				const dados = await resposta.json();
-				comprasOriginais = Array.isArray(dados) ? dados : [];
+				const listaComprasBruta = Array.isArray(dados) ? dados : [];
+
+				// 2. Busca TODOS os itens usando a URL com o "I" maiúsculo conforme o Go
+				let todosOsItens = [];
+				try {
+					const respTodosItens = await fetch(`${apiBase}/compraItem`);
+					if (respTodosItens.ok) {
+						todosOsItens = await respTodosItens.json();
+					}
+				} catch (e) {
+					console.log("Erro ao buscar lista geral de itens:", e);
+				}
+
+				// Normaliza caso venha envelopado em um objeto
+				if (!Array.isArray(todosOsItens) && todosOsItens) {
+					todosOsItens = todosOsItens.itens || todosOsItens.compraItens || todosOsItens.compra_itens || [todosOsItens];
+				}
+
+				// 3. Vincula os itens de cada compra localmente no frontend
+				comprasOriginais = listaComprasBruta.map((compra) => {
+					const idCompra = obterId(compra, ["idcompra", "id", "compra_id"]);
+					
+					// Filtra na lista global apenas os itens que pertencem a esta compra
+					compra.itens = todosOsItens.filter(item => 
+						String(item.idcompra ?? item.compra_id) === String(idCompra)
+					);
+					
+					return compra;
+				});
+
 				comprasFiltradas = [...comprasOriginais];
 				aplicarFiltro();
 			} catch (error) {
+				console.error(error);
 				comprasOriginais = [];
 				comprasFiltradas = [];
 				tbody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-muted">Não foi possível carregar as compras.</td></tr>`;
@@ -856,7 +919,7 @@
 			const empty = document.getElementById("emptyDetalheItens");
 			tbody.innerHTML = "";
 
-			if (!itens.length) {
+			if (!itens || !itens.length) {
 				empty.classList.remove("d-none");
 				return;
 			}
@@ -864,11 +927,13 @@
 			empty.classList.add("d-none");
 
 			itens.forEach((item) => {
-				const produtoId = obterId(item, ["idproduto", "produto_id"]);
-				const nomeProduto = obterNomeRegistro(item, ["produtoNome", "nome", "descricao"]) || obterNomeProduto(produtoId);
+				// Busca o ID do produto usando os padrões do banco
+				const produtoId = item.idproduto ?? item.id_produto ?? item.produto_id ?? "";
+				const nomeProduto = item.produtoNome || item.nome || item.descricao || obterNomeProduto(produtoId);
+				
 				const quantidade = parseNumero(item.quantidade);
-				const custoUnitario = parseNumero(item.custo_unitario);
-				const custoTotal = parseNumero(item.custo_total ?? quantidade * custoUnitario);
+				const custoUnitario = parseNumero(item.custo_unitario ?? item.custounitario);
+				const custoTotal = calcularTotalItem(item);
 
 				tbody.innerHTML += `
 					<tr>
@@ -887,40 +952,29 @@
 				return;
 			}
 
+			const compraLocal = comprasOriginais.find(c => String(obterId(c, ["idcompra", "id", "compra_id"])) === String(idCompra));
+
 			document.getElementById("modalDetalheTitulo").textContent = `Compra #${idCompra}`;
 			document.getElementById("detalheId").textContent = idCompra;
-			document.getElementById("detalheData").textContent = "Carregando...";
-			document.getElementById("detalheFornecedor").textContent = "Carregando...";
-			document.getElementById("detalheVencimento").textContent = "Carregando...";
-			document.getElementById("detalheTotal").textContent = formatarMoeda(0);
-			document.getElementById("tbodyDetalheItens").innerHTML = "";
-			document.getElementById("emptyDetalheItens").classList.add("d-none");
-			modalDetalheCompra.show();
-
-			try {
-				const resposta = await fetch(`${apiBase}/compras/${idCompra}`);
-				if (!resposta.ok) {
-					throw new Error("Falha ao carregar detalhe");
-				}
-
-				const compra = await resposta.json();
-				const itens = extrairItensCompra(compra);
-
-				document.getElementById("modalDetalheTitulo").textContent = `Compra #${obterId(compra, ["idcompra", "id", "compra_id"]) || idCompra}`;
-				document.getElementById("detalheId").textContent = obterId(compra, ["idcompra", "id", "compra_id"]) || idCompra;
-				document.getElementById("detalheData").textContent = exibirData(compra.data ?? compra.date ?? compra.data_compra);
-				document.getElementById("detalheFornecedor").textContent = obterNomeFornecedor(obterId(compra, ["idfornecedor", "fornecedor_id"]));
-				document.getElementById("detalheVencimento").textContent = exibirData(compra.data_vencimento ?? compra.vencimento);
-				document.getElementById("detalheTotal").textContent = formatarMoeda(calcularTotalCompra(compra));
-				montarLinhasItensDetalhe(itens);
-			} catch (error) {
+			
+			if (compraLocal) {
+				document.getElementById("detalheData").textContent = exibirData(compraLocal.data ?? compraLocal.date ?? compraLocal.data_compra);
+				document.getElementById("detalheFornecedor").textContent = obterNomeFornecedor(obterId(compraLocal, ["idfornecedor", "fornecedor_id"]));
+				document.getElementById("detalheVencimento").textContent = exibirData(compraLocal.datavencimento ?? compraLocal.data_vencimento ?? compraLocal.vencimento);
+				
+				const totalCompra = calcularTotalCompra(compraLocal);
+				document.getElementById("detalheTotal").textContent = formatarMoeda(totalCompra);
+				
+				montarLinhasItensDetalhe(compraLocal.itens || []);
+			} else {
 				document.getElementById("detalheData").textContent = "-";
 				document.getElementById("detalheFornecedor").textContent = "-";
 				document.getElementById("detalheVencimento").textContent = "-";
 				document.getElementById("detalheTotal").textContent = formatarMoeda(0);
-				document.getElementById("tbodyDetalheItens").innerHTML = "";
-				document.getElementById("emptyDetalheItens").classList.remove("d-none");
+				montarLinhasItensDetalhe([]);
 			}
+			
+			modalDetalheCompra.show();
 		}
 
 		function inicializarCamposPadrao() {
@@ -935,6 +989,23 @@
 				carregarCompras()
 			]);
 			renderizarItensCompra();
+
+			// Adicionar listeners para auto-aplicar filtro ao pressionar Enter
+			document.getElementById("txtFiltroInicio").addEventListener("keypress", (e) => {
+				if (e.key === "Enter") {
+					aplicarFiltro();
+				}
+			});
+
+			document.getElementById("txtFiltroFim").addEventListener("keypress", (e) => {
+				if (e.key === "Enter") {
+					aplicarFiltro();
+				}
+			});
+
+			// Validar ao sair do campo
+			document.getElementById("txtFiltroInicio").addEventListener("blur", validarIntervaloData);
+			document.getElementById("txtFiltroFim").addEventListener("blur", validarIntervaloData);
 		}
 
 		window.addEventListener("load", inicializarPagina);
