@@ -91,13 +91,31 @@ function getForm() {
     };
 }
 
+function cpfValido(cpf) {
+    if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
+
+    const calcularDigito = (base) => {
+        let soma = 0;
+        for (let i = 0; i < base.length; i++) {
+            soma += Number(base[i]) * (base.length + 1 - i);
+        }
+        const resto = (soma * 10) % 11;
+        return resto === 10 ? 0 : resto;
+    };
+
+    const primeiroDigito = calcularDigito(cpf.slice(0, 9));
+    const segundoDigito = calcularDigito(cpf.slice(0, 9) + primeiroDigito);
+
+    return Number(cpf[9]) === primeiroDigito && Number(cpf[10]) === segundoDigito;
+}
+
 // COMUNICAÇÃO API
 async function salvar() {
     const dados = getForm();
     let isValido = true;
 
     if (!dados.nome) { setError('nome'); isValido = false; }
-    if (!dados.cpf) { setError('cpf'); isValido = false; }
+    if (!cpfValido(dados.cpf)) { setError('cpf'); isValido = false; }
     if (!isValido) return;
 
     try {
