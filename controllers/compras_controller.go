@@ -23,7 +23,25 @@ func GetCompras(w http.ResponseWriter, r *http.Request) {
 	}
 	defer db.Close()
 
-	rows, err := db.Query("SELECT idcompra, date, idfornecedor, data_vencimento FROM compra")
+	dataInicial := r.URL.Query().Get("data_inicial")
+	dataFinal := r.URL.Query().Get("data_final")
+
+	query := "SELECT idcompra, date, idfornecedor, data_vencimento FROM compra WHERE 1=1"
+	var args []interface{}
+
+	// Se a data inicial veio na rota, joga ela no filtro
+	if dataInicial != "" {
+		query += " AND date >= ?"
+		args = append(args, dataInicial)
+	}
+
+	// Se a data final também veio, joga na query também
+	if dataFinal != "" {
+		query += " AND date <= ?"
+		args = append(args, dataFinal)
+	}
+
+	rows, err := db.Query(query, args...)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
