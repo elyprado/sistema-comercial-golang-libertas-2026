@@ -166,3 +166,31 @@ func DeleteContaPagar(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Conta a pagar removida com sucesso"})
 }
+
+func PayContaPagar(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	query := "UPDATE contas_pagar SET data_pagamento = CURRENT_DATE() WHERE id_contas_pagar=?"
+
+	result, err := db.Exec(query, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Conta a pagar não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Conta a pagar paga com sucesso"})
+}
