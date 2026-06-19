@@ -4,12 +4,17 @@ import (
 	"encoding/json"
 	"go-crud-api/config"
 	"go-crud-api/models"
+	"go-crud-api/utils"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
 func GetUsuarios(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -36,6 +41,10 @@ func GetUsuarios(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUsuarioById(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -64,6 +73,10 @@ func GetUsuarioById(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateUsuario(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
@@ -91,6 +104,10 @@ func CreateUsuario(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateUsuario(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
@@ -123,6 +140,10 @@ func UpdateUsuario(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteUsuario(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
@@ -147,4 +168,48 @@ func DeleteUsuario(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Usuário removido com sucesso"})
+}
+
+func Login(w http.ResponseWriter, r *http.Request) {
+	db, erro := config.Connect()
+	if erro != nil {
+		http.Error(w, erro.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var usuario models.User
+	err := json.NewDecoder(r.Body).Decode(&usuario)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query := "SELECT idusuario, nome FROM usuario WHERE email = ? AND senha = ?"
+	rows, erro := db.Query(query, usuario.Email, usuario.Senha)
+	if erro != nil {
+		http.Error(w, erro.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var id int
+		var nome string
+		err := rows.Scan(&id, &nome)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		token, err := utils.GerarToken(id, nome, "user")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		json.NewEncoder(w).Encode(map[string]string{"token": token})
+		return
+	}
+
+	w.WriteHeader(http.StatusUnauthorized)
+	json.NewEncoder(w).Encode(map[string]string{"message": "falha ao autenticar"})
 }
