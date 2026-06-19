@@ -478,7 +478,7 @@
 	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
 
 	<script>
-		const apiBase = "http://127.0.0.1:8080";
+		const apiBase = window.location.origin;
 		const compraItens = [];
 		let comprasOriginais = [];
 		let comprasFiltradas = [];
@@ -759,11 +759,11 @@
 		}
 
 		async function carregarFornecedores() {
-			await carregarSelect("fornecedores", "selFornecedor", "Fornecedores", ["razao_social", "nome", "descricao", "fantasia"], ["idfornecedor", "id", "fornecedor_id"]);
+			await carregarSelect("compras/fornecedores", "selFornecedor", "Fornecedores", ["razao_social", "nome", "descricao", "fantasia"], ["idfornecedor", "id", "fornecedor_id"]);
 		}
 
 		async function carregarProdutos() {
-			await carregarSelect("produtos", "selProduto", "Produtos", ["nome", "descricao", "produto"], ["idproduto", "id", "produto_id"]);
+			await carregarSelect("compras/produtos", "selProduto", "Produtos", ["nome", "descricao", "produto"], ["idproduto", "id", "produto_id"]);
 		}
 
 		async function carregarCompras() {
