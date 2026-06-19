@@ -4,10 +4,14 @@ import (
 	"encoding/json"
 	"go-crud-api/config"
 	"go-crud-api/models"
+	"go-crud-api/utils"
 	"net/http"
 )
 
 func GetClientes(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -37,6 +41,9 @@ func GetClientes(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVendedores(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -66,6 +73,9 @@ func GetVendedores(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetProdutos(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

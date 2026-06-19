@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"go-crud-api/config"
 	"go-crud-api/models"
+	"go-crud-api/utils"
 	"net/http"
 	"strconv"
 	"strings"
@@ -39,6 +40,9 @@ func parseDateTime(value string) (time.Time, error) {
 }
 
 func CreateVenda(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -127,6 +131,9 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVendas(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -190,6 +197,9 @@ func GetVendas(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVendaById(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
