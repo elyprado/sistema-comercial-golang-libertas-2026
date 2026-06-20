@@ -10,7 +10,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Busca todos os usuários e os retorna em JSON.
+// Busca todos os usuários e os retorna em JSON
 func GetUsuarios(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
@@ -44,7 +44,7 @@ func GetUsuarios(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-// Busca um usuário pelo ID informado na rota.
+// Busca um usuário pelo ID informado na rota
 func GetUsuarioById(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
@@ -79,7 +79,7 @@ func GetUsuarioById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(user)
 }
 
-// Insere um novo usuário a partir do JSON recebido.
+// Insere um novo usuário a partir do JSON recebido
 func CreateUsuario(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
@@ -111,7 +111,7 @@ func CreateUsuario(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Sucesso"})
 }
 
-// Atualiza os dados de um usuário existente pelo ID.
+// Atualiza os dados de um usuário existente pelo ID
 func UpdateUsuario(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
@@ -151,7 +151,7 @@ func UpdateUsuario(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"message": "Usuário atualizado com sucesso"})
 }
 
-// Remove o usuário identificado pelo ID na rota.
+// Remove o usuário identificado pelo ID na rota
 func DeleteUsuario(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
