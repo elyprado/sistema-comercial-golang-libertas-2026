@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"go-crud-api/utils"
 	"net/http"
 	"time"
 
@@ -42,7 +41,7 @@ func ValidarTokenRequest(w http.ResponseWriter, r *http.Request) bool {
 	}
 	//remove a palavra Bearer do token
 	tokenString = tokenString[len("Bearer "):]
-	token, err := utils.ValidarToken(tokenString)
+	token, err := ValidarToken(tokenString)
 	if err != nil || !token.Valid {
 		http.Error(w, "Token inválido", http.StatusUnauthorized)
 		return false

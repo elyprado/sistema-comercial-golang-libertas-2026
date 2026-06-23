@@ -27,6 +27,8 @@ func SetupRouter() *mux.Router {
 
 	// Configurar rotas de usuários em um arquivo separado
 	SetupUsuarioRoutes(router)
+	SetupCatalogRoutes(router)
+	SetupVendaRoutes(router)
 
 	SetupVendedorRoutes(router)
 	// Configurar rotas de contas a receber em um arquivo separado
