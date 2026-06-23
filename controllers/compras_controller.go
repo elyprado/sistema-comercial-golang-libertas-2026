@@ -1,0 +1,398 @@
+package controllers
+
+import (
+	"encoding/json"
+	"go-crud-api/config"
+	"go-crud-api/models"
+	"net/http"
+
+	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/shopspring/decimal"
+)
+
+//Controller para a entidade Compras, responsável por lidar com as requisições relacionadas a compras, como criar, ler, atualizar e deletar registros de compras no banco de dados. Cada função se conecta ao banco de dados, executa a operação necessária e retorna a resposta apropriada ao cliente.
+
+// GetCompras é responsável por buscar todas as compras no banco de dados e retornar os resultados em formato JSON. Ele se conecta ao banco de dados, executa uma consulta SQL para selecionar os campos relevantes da tabela de compras, e depois codifica os resultados em JSON para enviar de volta ao cliente.
+func GetCompras(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	dataInicial := r.URL.Query().Get("data_inicial")
+	dataFinal := r.URL.Query().Get("data_final")
+
+	query := "SELECT idcompra, date, idfornecedor, data_vencimento FROM compra WHERE 1=1"
+	var args []interface{}
+
+	// Se a data inicial veio na rota, joga ela no filtro
+	if dataInicial != "" {
+		query += " AND date >= ?"
+		args = append(args, dataInicial)
+	}
+
+	// Se a data final também veio, joga na query também
+	if dataFinal != "" {
+		query += " AND date <= ?"
+		args = append(args, dataFinal)
+	}
+
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var compras []models.Compras
+	for rows.Next() {
+		var compra models.Compras
+		if err := rows.Scan(&compra.IdCompra, &compra.Data, &compra.IdFornecedor, &compra.DataVencimento); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		compras = append(compras, compra)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(compras)
+}
+
+// GetComprasComItens busca todas as compras com seus itens associados
+func GetComprasComItens(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	// Buscar todas as compras
+	rowsCompras, err := db.Query("SELECT idcompra, date, idfornecedor, data_vencimento FROM compra ORDER BY idcompra")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rowsCompras.Close()
+
+	var comprasComItens []models.ComprasComItens
+
+	for rowsCompras.Next() {
+		var compra models.ComprasComItens
+		if err := rowsCompras.Scan(&compra.IdCompra, &compra.Data, &compra.IdFornecedor, &compra.DataVencimento); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Buscar itens dessa compra
+		rowsItens, err := db.Query("SELECT idcompraitem, idcompra, idproduto, quantidade, custo_unitario, custo_total FROM compraItem WHERE idcompra = ?", compra.IdCompra)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer rowsItens.Close()
+
+		compra.Itens = []models.CompraItem{}
+		for rowsItens.Next() {
+			var item models.CompraItem
+			if err := rowsItens.Scan(&item.IdCompraItem, &item.IdCompra, &item.IdProduto, &item.Quantidade, &item.CustoUnitario, &item.CustoTotal); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			compra.Itens = append(compra.Itens, item)
+		}
+
+		comprasComItens = append(comprasComItens, compra)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(comprasComItens)
+}
+
+// GetComprasById é responsável por buscar uma compra específica no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, executa uma consulta SQL para selecionar os campos relevantes da tabela de compras onde o ID corresponde ao valor fornecido, e depois codifica o resultado em JSON para enviar de volta ao cliente.
+func GetComprasById(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	rows, err := db.Query("SELECT idcompra, date, idfornecedor, data_vencimento FROM compra WHERE idcompra = ?", id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var compra models.Compras
+	for rows.Next() {
+		if err := rows.Scan(&compra.IdCompra, &compra.Data, &compra.IdFornecedor, &compra.DataVencimento); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(compra)
+}
+
+// CreateCompras é responsável por criar uma nova compra no banco de dados. Ele se conecta ao banco de dados, decodifica os dados da compra enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e as datas, e depois executa uma consulta SQL para inserir os dados da nova compra na tabela de compras. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON.
+func CreateCompras(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var compra models.Compras
+	if err := json.NewDecoder(r.Body).Decode(&compra); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// verifica se variaveis não são nulas
+	if compra.Data == nil || compra.IdFornecedor == nil || compra.DataVencimento == nil {
+		http.Error(w, "Campos 'data', 'idfornecedor' e 'data_vencimento' são obrigatórios", http.StatusBadRequest)
+		return
+	}
+
+	// Converter as strings de data para time
+	dataConvertida, err := time.Parse("2006-01-02", *compra.Data)
+	if err != nil {
+		http.Error(w, "Formato de 'date' inválido. Use o formato YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	vencimentoConvertido, err := time.Parse("2006-01-02", *compra.DataVencimento)
+	if err != nil {
+		http.Error(w, "Formato de 'data_vencimento' inválido. Use o formato YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	query := "INSERT INTO compra (date, idfornecedor, data_vencimento) VALUES (?, ?, ?)"
+	_, err = db.Exec(query, dataConvertida, compra.IdFornecedor, vencimentoConvertido)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]string{"message": "Sucesso"})
+}
+
+// UpdateCompras é responsável por atualizar uma compra existente no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, decodifica os dados da compra enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e as datas, e depois executa uma consulta SQL para atualizar os dados da compra na tabela de compras onde o ID corresponde ao valor fornecido. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON.
+func UpdateCompras(w http.ResponseWriter, r *http.Request) {
+	db, erro := config.Connect()
+	if erro != nil {
+		http.Error(w, erro.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+	params := mux.Vars(r)
+	id := params["id"]
+	var compra models.Compras
+	err := json.NewDecoder(r.Body).Decode(&compra)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	query := "UPDATE compra SET date=?, idfornecedor=?, data_vencimento=? WHERE idcompra=?"
+	result, err := db.Exec(query, compra.Data, compra.IdFornecedor, compra.DataVencimento, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Compra não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Compra atualizada com sucesso"})
+}
+
+// DeleteCompras é responsável por deletar uma compra existente no banco de dados com base no ID fornecido na URL. Ele se conecta ao banco de dados, executa uma consulta SQL para deletar a compra da tabela de compras onde o ID corresponde ao valor fornecido. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON. Se a compra não for encontrada, ele retorna um erro 404.
+func DeleteCompras(w http.ResponseWriter, r *http.Request) {
+	db, erro := config.Connect()
+	if erro != nil {
+		http.Error(w, erro.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	params := mux.Vars(r)
+	id := params["id"]
+
+	query := "DELETE FROM compra WHERE idcompra=?"
+	result, err := db.Exec(query, id)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		http.Error(w, "Compra não encontrada", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{"message": "Compra removida com sucesso"})
+}
+
+// ----------------- Consulta de fornecedores para compras -----------------
+
+// GetFornecedoresDisponiveis retorna fornecedores disponíveis para serem associados a uma compra. Ele se conecta ao banco de dados, executa uma consulta SQL para selecionar os campos relevantes da tabela de fornecedores, e depois codifica os resultados em JSON para enviar de volta ao cliente. Essa função é útil para preencher dropdowns ou listas de seleção no frontend quando o usuário estiver criando ou editando uma compra, permitindo que ele escolha um fornecedor existente.
+
+func GetFornecedoresDisponiveis(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT idfornecedor, nome FROM fornecedor")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	fornecedores := []models.Fornecedor{}
+	for rows.Next() {
+		var fornecedor models.Fornecedor
+		err := rows.Scan(&fornecedor.IdFornecedor, &fornecedor.Nome)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fornecedores = append(fornecedores, fornecedor)
+	}
+
+	json.NewEncoder(w).Encode(fornecedores)
+}
+
+// GetProdutosDisponiveis retorna produtos disponíveis para serem associados a uma compra. Ele se conecta ao banco de dados, executa uma consulta SQL para selecionar os campos relevantes da tabela de produtos, e depois codifica os resultados em JSON para enviar de volta ao cliente. Essa função é útil para preencher dropdowns ou listas de seleção no frontend quando o usuário estiver criando ou editando uma compra, permitindo que ele escolha um produto existente.
+
+func GetProdutosDisponiveis(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT idproduto, descricao FROM produto")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	produtos := []models.Produto{}
+	for rows.Next() {
+		var produto models.Produto
+		err := rows.Scan(&produto.IdProduto, &produto.Descricao)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		produtos = append(produtos, produto)
+	}
+	json.NewEncoder(w).Encode(produtos)
+}
+
+// CreateCompraComItens é responsável por criar uma nova compra junto com seus itens associados no banco de dados. Ele se conecta ao banco de dados, decodifica os dados da compra e dos itens enviados no corpo da requisição em formato JSON, valida os campos obrigatórios e as datas, e depois executa uma transação SQL para inserir os dados da nova compra na tabela de compras e os itens relacionados na tabela de itens de compra. Se a operação for bem-sucedida, ele retorna uma mensagem de sucesso em formato JSON junto com o ID da compra criada.
+
+func CreateCompraComItens(w http.ResponseWriter, r *http.Request) {
+	db, err := config.Connect()
+	if err != nil {
+		http.Error(w, "Erro ao conectar no banco de dados", http.StatusInternalServerError)
+		return
+	}
+	defer db.Close()
+
+	var payload models.CompraComItensRequest
+	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		http.Error(w, "Erro ao ler os dados enviados", http.StatusBadRequest)
+		return
+	}
+
+	if payload.Data == nil || payload.IdFornecedor == nil || payload.DataVencimento == nil {
+		http.Error(w, "Campos 'data', 'idfornecedor' e 'data_vencimento' são obrigatórios", http.StatusBadRequest)
+		return
+	}
+
+	dataConvertida, err := time.Parse("2006-01-02", *payload.Data)
+	if err != nil {
+		http.Error(w, "Formato de 'data' inválido. Use YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	vencimentoConvertido, err := time.Parse("2006-01-02", *payload.DataVencimento)
+	if err != nil {
+		http.Error(w, "Formato de 'data_vencimento' inválido. Use YYYY-MM-DD", http.StatusBadRequest)
+		return
+	}
+
+	if len(payload.Itens) == 0 {
+		http.Error(w, "A compra precisa ter pelo menos um item", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := db.Begin()
+	if err != nil {
+		http.Error(w, "Erro ao iniciar transação no banco", http.StatusInternalServerError)
+		return
+	}
+
+	queryCompra := "INSERT INTO compra (date, idfornecedor, data_vencimento) VALUES (?, ?, ?)"
+	resultado, err := tx.Exec(queryCompra, dataConvertida, payload.IdFornecedor, vencimentoConvertido)
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, "Erro ao salvar a compra: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	compraID, err := resultado.LastInsertId()
+	if err != nil {
+		tx.Rollback()
+		http.Error(w, "Erro ao recuperar o ID da compra", http.StatusInternalServerError)
+		return
+	}
+
+	queryItem := "INSERT INTO compraItem (idcompra, idproduto, quantidade, custo_unitario, custo_total) VALUES (?, ?, ?, ?, ?)"
+
+	for _, item := range payload.Itens {
+		if item.IdProduto == nil || item.Quantidade == nil || *item.Quantidade <= 0 ||
+			item.CustoUnitario == nil || (*item.CustoUnitario).LessThanOrEqual(decimal.Zero) ||
+			item.CustoTotal == nil || (*item.CustoTotal).LessThanOrEqual(decimal.Zero) {
+			tx.Rollback()
+			http.Error(w, "Campos de itens faltando ou com valores inválidos", http.StatusBadRequest)
+			return
+		}
+
+		_, err = tx.Exec(queryItem, compraID, item.IdProduto, item.Quantidade, item.CustoUnitario, item.CustoTotal)
+		if err != nil {
+			tx.Rollback()
+			http.Error(w, "Erro ao salvar item da compra: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		http.Error(w, "Erro ao finalizar a transação", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message":   "Compra e itens criados com sucesso, mano!",
+		"id_compra": compraID,
+	})
+}
