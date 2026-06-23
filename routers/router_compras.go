@@ -1,0 +1,20 @@
+package routers
+
+import (
+	"go-crud-api/controllers"
+
+	"github.com/gorilla/mux"
+)
+
+func SetupComprasRouters(router *mux.Router) {
+	// Rota para retornar fornecedores e produtos para a criação de compras
+	router.HandleFunc("/compras/fornecedores", controllers.GetFornecedoresDisponiveis).Methods("GET")
+	router.HandleFunc("/compras/produtos", controllers.GetProdutosDisponiveis).Methods("GET")
+	router.HandleFunc("/compras/completas", controllers.GetComprasComItens).Methods("GET")
+
+	router.HandleFunc("/compras", controllers.GetCompras).Methods("GET")
+	router.HandleFunc("/compras/{id}", controllers.GetComprasById).Methods("GET")
+	router.HandleFunc("/compras", controllers.CreateCompraComItens).Methods("POST")
+	router.HandleFunc("/compras/{id}", controllers.UpdateCompras).Methods("PUT")
+	router.HandleFunc("/compras/{id}", controllers.DeleteCompras).Methods("DELETE")
+}
