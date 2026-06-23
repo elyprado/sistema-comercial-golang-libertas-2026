@@ -181,48 +181,4 @@ func DeleteUsuario(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{"message": "Usuário removido com sucesso"})
-}
-
-func Login(w http.ResponseWriter, r *http.Request) {
-	db, erro := config.Connect()
-	if erro != nil {
-		http.Error(w, erro.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer db.Close()
-
-	var usuario models.User
-	err := json.NewDecoder(r.Body).Decode(&usuario)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	query := "SELECT idusuario, nome FROM usuario WHERE email = ? AND senha = ?"
-	rows, erro := db.Query(query, usuario.Email, usuario.Senha)
-	if erro != nil {
-		http.Error(w, erro.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer rows.Close()
-
-	if rows.Next() {
-		var id int
-		var nome string
-		err := rows.Scan(&id, &nome)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		token, err := utils.GerarToken(id, nome, "user")
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		json.NewEncoder(w).Encode(map[string]string{"token": token})
-		return
-	}
-
-	w.WriteHeader(http.StatusUnauthorized)
-	json.NewEncoder(w).Encode(map[string]string{"message": "falha ao autenticar"})
-}
+}	
