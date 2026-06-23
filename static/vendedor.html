@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Sistema Comercial | Vendedores</title>
+    <style>
+        body { background-color: #f4f7f4; font-family: sans-serif; }
+        .container { background: white; padding: 30px; border-radius: 15px; margin-top: 50px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Gestão de Vendedores</h2>
+            <button class="btn btn-success" onclick="novo()">+ Novo Vendedor</button>
+        </div>
+
+        <table class="table table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>Nome</th>
+                    <th>CPF</th>
+                    <th>E-mail</th>
+                    <th>Comissão</th>
+                    <th>Salário</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="corpoTabela">
+                <!-- Dados vêm do JavaScript -->
+            </tbody>
+        </table>
+        <a href="index.html" class="btn btn-secondary">Voltar ao Menu</a>
+    </div>
+
+    <!-- Modal de Cadastro/Edição -->
+    <div class="modal fade" id="modalVendedor" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="tituloModal">Vendedor</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome Completo</label>
+                        <input type="text" id="txtNome" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">CPF</label>
+                        <input type="text" id="txtCpf" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefone</label>
+                        <input type="text" id="txtTelefone" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-mail</label>
+                        <input type="email" id="txtEmail" class="form-control">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Comissão (%)</label>
+                            <input type="number" step="0.01" id="txtComissao" class="form-control">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Salário (R$)</label>
+                            <input type="number" step="0.01" id="txtSalario" class="form-control">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="salvar()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let idVendedorEdicao = 0;
+        const modalVendedor = new bootstrap.Modal(document.getElementById('modalVendedor'));
+
+        async function carregaDados() {
+            const resp = await fetch("/vendedores");
+            const data = await resp.json();
+            const tbody = document.getElementById("corpoTabela");
+            tbody.innerHTML = "";
+            data.forEach(v => {
+                tbody.innerHTML += `<tr>
+                    <td>${v.nome}</td>
+                    <td>${v.cpf}</td>
+                    <td>${v.email}</td>
+                    <td>${v.comissao_percentual}%</td>
+                    <td>R$ ${v.salario.toFixed(2)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" onclick="editar(${v.idvendedor})">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="excluir(${v.idvendedor})">Excluir</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        async function salvar() {
+            const payload = {
+                nome: document.getElementById("txtNome").value,
+                cpf: document.getElementById("txtCpf").value,
+                telefone: document.getElementById("txtTelefone").value,
+                email: document.getElementById("txtEmail").value,
+                comissao_percentual: parseFloat(document.getElementById("txtComissao").value),
+                salario: parseFloat(document.getElementById("txtSalario").value)
+            };
+
+            const url = idVendedorEdicao > 0 ? `/vendedores/${idVendedorEdicao}` : "/vendedores";
+            const method = idVendedorEdicao > 0 ? "PUT" : "POST";
+
+            const resp = await fetch(url, {
+                method: method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (resp.ok) {
+                modalVendedor.hide();
+                carregaDados();
+            } else {
+                alert("Erro ao salvar dados.");
+            }
+        }
+
+        async function editar(id) {
+            idVendedorEdicao = id;
+            const resp = await fetch(`/vendedores/${id}`);
+            const v = await resp.json();
+            
+            document.getElementById("txtNome").value = v.nome;
+            document.getElementById("txtCpf").value = v.cpf;
+            document.getElementById("txtTelefone").value = v.telefone;
+            document.getElementById("txtEmail").value = v.email;
+            document.getElementById("txtComissao").value = v.comissao_percentual;
+            document.getElementById("txtSalario").value = v.salario;
+            
+            modalVendedor.show();
+        }
+
+        async function excluir(id) {
+            if (confirm("Deseja realmente excluir este vendedor?")) {
+                await fetch(`/vendedores/${id}`, { method: "DELETE" });
+                carregaDados();
+            }
+        }
+
+        function novo() {
+            idVendedorEdicao = 0;
+            document.querySelectorAll(".form-control").forEach(i => i.value = "");
+            modalVendedor.show();
+        }
+
+        carregaDados();
+    </script>
+</body>
+</html>
