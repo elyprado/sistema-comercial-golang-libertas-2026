@@ -7,7 +7,7 @@ import (
 )
 
 func SetupCatalogRoutes(router *mux.Router) {
-	router.HandleFunc("/clientes", controllers.GetClientes).Methods("GET")
-	router.HandleFunc("/vendedores", controllers.GetVendedores).Methods("GET")
-	router.HandleFunc("/produtos", controllers.GetProdutos).Methods("GET")
+	router.HandleFunc("/clientescatalog", controllers.GetClientesCatalog).Methods("GET")
+	router.HandleFunc("/vendedorescatalog", controllers.GetVendedoresCatalog).Methods("GET")
+	router.HandleFunc("/produtoscatalog", controllers.GetProdutosCatalog).Methods("GET")
 }

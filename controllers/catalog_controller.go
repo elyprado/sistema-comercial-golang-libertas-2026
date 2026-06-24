@@ -9,7 +9,7 @@ import (
 )
 
 // Retorna a lista de clientes disponíveis para seleção em vendas
-func GetClientes(w http.ResponseWriter, r *http.Request) {
+func GetClientesCatalog(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
 	}
@@ -42,7 +42,7 @@ func GetClientes(w http.ResponseWriter, r *http.Request) {
 }
 
 // Retorna a lista de vendedores para seleção na criação de venda
-func GetVendedores(w http.ResponseWriter, r *http.Request) {
+func GetVendedoresCatalog(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
 	}
@@ -75,7 +75,7 @@ func GetVendedores(w http.ResponseWriter, r *http.Request) {
 }
 
 // Retorna produtos com preço de venda para composição de itens de venda
-func GetProdutos(w http.ResponseWriter, r *http.Request) {
+func GetProdutosCatalog(w http.ResponseWriter, r *http.Request) {
 	if !utils.ValidarTokenRequest(w, r) {
 		return
 	}

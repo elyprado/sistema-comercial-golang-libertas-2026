@@ -138,9 +138,9 @@ func CreateVenda(w http.ResponseWriter, r *http.Request) {
 
 // Retorna vendas com filtros opcionais de data
 func GetVendas(w http.ResponseWriter, r *http.Request) {
-	if !utils.ValidarTokenRequest(w, r) {
-		return
-	}
+	//if !utils.ValidarTokenRequest(w, r) {
+	//	return
+	//}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -205,9 +205,9 @@ func GetVendas(w http.ResponseWriter, r *http.Request) {
 
 // Retorna uma venda específica e seus itens.
 func GetVendaById(w http.ResponseWriter, r *http.Request) {
-	if !utils.ValidarTokenRequest(w, r) {
-		return
-	}
+	//if !utils.ValidarTokenRequest(w, r) {
+	//	return
+	//	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

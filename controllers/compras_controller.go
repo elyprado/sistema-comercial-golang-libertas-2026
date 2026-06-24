@@ -266,7 +266,7 @@ func GetFornecedoresDisponiveis(w http.ResponseWriter, r *http.Request) {
 	fornecedores := []models.Fornecedor{}
 	for rows.Next() {
 		var fornecedor models.Fornecedor
-		err := rows.Scan(&fornecedor.IdFornecedor, &fornecedor.Nome)
+		err := rows.Scan(&fornecedor.Idfornecedor, &fornecedor.Nome)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
