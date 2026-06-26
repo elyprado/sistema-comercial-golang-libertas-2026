@@ -1,6 +1,19 @@
 const API = 'http://localhost:8080/clientes';
 let editandoId = null;
 
+function getAuthHeaders(json = false) {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+        throw new Error('Token não encontrado. Faça login pela tela inicial.');
+    }
+
+    const headers = { 'Authorization': `Bearer ${token}` };
+    if (json) {
+        headers['Content-Type'] = 'application/json';
+    }
+    return headers;
+}
+
 // GERENCIAMENTO DAS TELAS
 function abrirFormulario(cliente = null) {
     // Esconde a lista e mostra o form
@@ -123,7 +136,7 @@ async function salvar() {
         const url = editandoId ? `${API}/${editandoId}` : API;
         const r = await fetch(url, {
             method,
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(true),
             body: JSON.stringify(dados)
         });
 
@@ -145,7 +158,7 @@ async function carregarClientes() {
         <p class="text-gray-500 font-medium text-sm">Buscando dados...</p>
       </div>`;
     try {
-        const r = await fetch(API);
+        const r = await fetch(API, { headers: getAuthHeaders() });
         if (!r.ok) throw new Error(await r.text());
         const lista = await r.json();
 
@@ -229,7 +242,10 @@ async function carregarClientes() {
 async function deletar(id) {
     if (!confirm('Excluir permanentemente este registro?')) return;
     try {
-        const r = await fetch(`${API}/${id}`, { method: 'DELETE' });
+        const r = await fetch(`${API}/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
         if (!r.ok) throw new Error(await r.text());
         showMsg('Registro excluído com sucesso.');
         carregarClientes();
