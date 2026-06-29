@@ -6,11 +6,15 @@ import (
 
 	"go-crud-api/config"
 	"go-crud-api/models"
+	"go-crud-api/utils"
 
 	"github.com/gorilla/mux"
 )
 
 func CreateContaPagar(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -39,6 +43,9 @@ func CreateContaPagar(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetContasPagar(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -70,6 +77,9 @@ func GetContasPagar(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetContasPagarById(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -104,6 +114,9 @@ func GetContasPagarById(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateContaPagar(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -140,6 +153,9 @@ func UpdateContaPagar(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteContaPagar(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -168,6 +184,9 @@ func DeleteContaPagar(w http.ResponseWriter, r *http.Request) {
 }
 
 func PayContaPagar(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
