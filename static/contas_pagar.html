@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contas a Pagar | Grupo 8</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+  <style>
+    :root {
+      --bg-1: #f4f7f4;
+      --bg-2: #dfe9df;
+      --brand: #0f5f3e;
+      --brand-dark: #0a432c;
+      --accent: #f4b400;
+      --text-main: #1d2722;
+      --text-muted: #5f6d66;
+      --card-border: #d8e1da;
+    }
+
+    body {
+      font-family: "Manrope", sans-serif;
+      color: var(--text-main);
+      background:
+        radial-gradient(circle at 10% 10%, #ffffff 0%, #ffffff00 40%),
+        radial-gradient(circle at 90% 0%, #e7f2ea 0%, #ffffff00 35%),
+        linear-gradient(160deg, var(--bg-1), var(--bg-2));
+      min-height: 100vh;
+    }
+
+    .topbar {
+      background: linear-gradient(90deg, var(--brand-dark), var(--brand));
+      color: #fff;
+      box-shadow: 0 8px 24px rgba(15, 95, 62, 0.25);
+    }
+
+    .brand-badge {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      padding: 4px 12px;
+      font-size: 12px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .panel {
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.88);
+      backdrop-filter: blur(2px);
+      box-shadow: 0 10px 30px rgba(22, 38, 28, 0.07);
+    }
+
+    .btn-main {
+      background: var(--brand);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+    }
+
+    .btn-main:hover {
+      background: var(--brand-dark);
+      color: #fff;
+    }
+
+    /* REQUISITO: Exibir em cor diferente os itens que já foram pagos */
+    .conta-paga {
+      background-color: #e2f0e7 !important; /* Verde suave da identidade */
+      color: #0b482f;
+    }
+    
+    .conta-pendente {
+      background-color: #ffffff !important;
+    }
+
+    .help-text {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="topbar py-3 mb-4">
+    <div class="container d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+      <div>
+        <div class="brand-badge mb-2">Grupo 8 - Financeiro</div>
+        <h1 class="h4 mb-0 fw-bold">Gestão de Contas a Pagar</h1>
+      </div>
+      <div class="text-md-end">
+        <a href="index.html" class="btn btn-sm btn-light fw-bold text-success">← Voltar ao Menu</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <section class="panel p-4 mb-4">
+      <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-5">
+          <label for="filtroVencimento" class="form-label small fw-bold">Filtrar por Data de Vencimento</label>
+          <input type="date" class="form-control" id="filtroVencimento">
+        </div>
+        <div class="col-12 col-md-3">
+          <button class="btn btn-outline-secondary w-100" onclick="limparFiltro()">Limpar Filtro</button>
+        </div>
+        <div class="col-12 col-md-4 text-md-end">
+          <button type="button" class="btn btn-main w-100 py-2" onclick="abrirModalNovo()">+ Inserir Nova Conta</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel p-4">
+      <h3 class="h5 fw-bold mb-3">Lançamentos de Títulos</h3>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>ID Conta</th>
+              <th>ID Fornecedor</th>
+              <th>Data Emissão</th>
+              <th>Data Vencimento</th>
+              <th>Valor</th>
+              <th>Data Pagamento</th>
+              <th class="text-center">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="dadosContas">
+            </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal fade" id="modalConta" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" style="border-radius: 18px; overflow: hidden;">
+        <div class="modal-header topbar">
+          <h1 class="modal-title fs-5 fw-bold text-white">Cadastrar Nova Conta</h1>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body p-4">
+          
+          <div class="input-group mb-3">
+            <span class="input-group-text fw-bold">ID Fornecedor:</span>
+            <input type="number" class="form-control" id="txtFornecedor" placeholder="Ex: 1">
+          </div>
+          
+          <div class="input-group mb-3">
+            <span class="input-group-text fw-bold">Data Emissão:</span>
+            <input type="date" class="form-control" id="txtDataEmissao">
+          </div>
+
+          <div class="input-group mb-3">
+            <span class="input-group-text fw-bold">Vencimento:</span>
+            <input type="date" class="form-control" id="txtVencimento">
+          </div>
+
+          <div class="input-group mb-3">
+            <span class="input-group-text fw-bold">Valor (R$):</span>
+            <input type="number" step="0.01" class="form-control" id="txtValor" placeholder="0.00">
+          </div>
+
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-main" onclick="salvar()">Salvar Lançamento</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+  <script src="js/contasPagar.js"></script>
+</body>
+</html>

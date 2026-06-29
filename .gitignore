@@ -32,3 +32,6 @@ go.work.sum
 # .vscode/
 .DS_Store
 __debug_bin2980523987
+
+# Postman collection local de teste
+postman_collection.json
