@@ -4,12 +4,17 @@ import (
 	"encoding/json"
 	"go-crud-api/config"
 	"go-crud-api/models"
+	"go-crud-api/utils" 
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
 func GetVendedores(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -39,6 +44,10 @@ func GetVendedores(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetVendedorById(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -69,6 +78,10 @@ func GetVendedorById(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateVendedor(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
@@ -95,6 +108,10 @@ func CreateVendedor(w http.ResponseWriter, r *http.Request) {
 }
 
 func UpdateVendedor(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
@@ -129,6 +146,10 @@ func UpdateVendedor(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteVendedor(w http.ResponseWriter, r *http.Request) {
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)

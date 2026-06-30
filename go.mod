@@ -7,10 +7,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/mux v1.8.1
 	github.com/joho/godotenv v1.5.1
+	github.com/shopspring/decimal v1.4.0
 )
 
-require (
-	filippo.io/edwards25519 v1.2.0 // indirect
-	github.com/rs/cors v1.11.1 // indirect
-	github.com/shopspring/decimal v1.4.0 // indirect
-)
+require filippo.io/edwards25519 v1.2.0 // indirect
