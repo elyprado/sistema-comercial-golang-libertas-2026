@@ -82,27 +82,73 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let idVendedorEdicao = 0;
-        const modalVendedor = new bootstrap.Modal(document.getElementById('modalVendedor'));
+    const modalVendedor = new bootstrap.Modal(document.getElementById('modalVendedor'));
 
-        async function carregaDados() {
-            const resp = await fetch("/vendedores");
+    // 1. Verificação imediata ao abrir a página
+    const tokenAtual = sessionStorage.getItem("token");
+
+    if (!tokenAtual) {
+        // Se não tem nem o texto do token no PC, nem tenta carregar, vai pro login
+        window.location.href = "usuarios.html"; 
+    }
+
+    function getToken() {
+        return sessionStorage.getItem("token");
+    }
+
+    async function carregaDados() {
+        const token = getToken();
+        
+        // Se o token sumiu por algum motivo nesse meio tempo
+        if (!token) {
+            window.location.href = "usuarios.html";
+            return;
+        }
+
+        try {
+            const resp = await fetch("/vendedores", {
+                headers: {
+                    "Authorization": "Bearer " + token
+                }
+            });
+
+            if (resp.status === 401) {
+                // Só limpa e redireciona se o SERVIDOR disser que o token não vale nada
+                sessionStorage.removeItem("token"); // Limpa o lixo para não dar erro no próximo login
+                alert("Sessão expirada. Por favor, faça login novamente.");
+                window.location.href = "usuarios.html";
+                return;
+            }
+
             const data = await resp.json();
             const tbody = document.getElementById("corpoTabela");
             tbody.innerHTML = "";
-            data.forEach(v => {
-                tbody.innerHTML += `<tr>
-                    <td>${v.nome}</td>
-                    <td>${v.cpf}</td>
-                    <td>${v.email}</td>
-                    <td>${v.comissao_percentual}%</td>
-                    <td>R$ ${v.salario.toFixed(2)}</td>
-                    <td>
-                        <button class="btn btn-sm btn-warning" onclick="editar(${v.idvendedor})">Editar</button>
-                        <button class="btn btn-sm btn-danger" onclick="excluir(${v.idvendedor})">Excluir</button>
-                    </td>
-                </tr>`;
-            });
+            
+            // Verificação extra para não dar erro se o data for nulo
+            if(data) {
+                data.forEach(v => {
+                    tbody.innerHTML += `<tr>
+                        <td>${v.nome}</td>
+                        <td>${v.cpf}</td>
+                        <td>${v.email}</td>
+                        <td>${v.comissao_percentual}%</td>
+                        <td>R$ ${v.salario.toFixed(2)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-warning" onclick="editar(${v.idvendedor})">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="excluir(${v.idvendedor})">Excluir</button>
+                        </td>
+                    </tr>`;
+                });
+            }
+        } catch (error) {
+            console.error("Erro na requisição:", error);
         }
+    }
+
+    // Só chama o carregaDados se passou pela primeira trava ali em cima
+    if (tokenAtual) {
+        carregaDados();
+    }
 
         async function salvar() {
             const payload = {
@@ -119,7 +165,10 @@
 
             const resp = await fetch(url, {
                 method: method,
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": "Bearer " + getToken() // ENVIO DO TOKEN
+                },
                 body: JSON.stringify(payload)
             });
 
@@ -127,13 +176,17 @@
                 modalVendedor.hide();
                 carregaDados();
             } else {
-                alert("Erro ao salvar dados.");
+                alert("Erro ao salvar dados ou sem permissão.");
             }
         }
 
         async function editar(id) {
             idVendedorEdicao = id;
-            const resp = await fetch(`/vendedores/${id}`);
+            const resp = await fetch(`/vendedores/${id}`, {
+                headers: {
+                    "Authorization": "Bearer " + getToken() // ENVIO DO TOKEN
+                }
+            });
             const v = await resp.json();
             
             document.getElementById("txtNome").value = v.nome;
@@ -148,7 +201,12 @@
 
         async function excluir(id) {
             if (confirm("Deseja realmente excluir este vendedor?")) {
-                await fetch(`/vendedores/${id}`, { method: "DELETE" });
+                await fetch(`/vendedores/${id}`, { 
+                    method: "DELETE",
+                    headers: {
+                        "Authorization": "Bearer " + getToken() // ENVIO DO TOKEN
+                    }
+                });
                 carregaDados();
             }
         }
