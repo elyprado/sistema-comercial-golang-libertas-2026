@@ -2,6 +2,7 @@ package utils
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -33,13 +34,19 @@ func ValidarToken(tokenString string) (*jwt.Token, error) {
 }
 func ValidarTokenRequest(w http.ResponseWriter, r *http.Request) bool {
 
-	//valida token JWT
+	// valida token JWT
 	tokenString := r.Header.Get("Authorization")
 	if tokenString == "" {
 		http.Error(w, "Token não fornecido", http.StatusUnauthorized)
 		return false
 	}
-	//remove a palavra Bearer do token
+
+	if !strings.HasPrefix(tokenString, "Bearer ") {
+		http.Error(w, "Authorization header inválido", http.StatusUnauthorized)
+		return false
+	}
+
+	// remove a palavra Bearer do token
 	tokenString = tokenString[len("Bearer "):]
 	token, err := ValidarToken(tokenString)
 	if err != nil || !token.Valid {

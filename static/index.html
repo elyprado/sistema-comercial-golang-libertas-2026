@@ -52,6 +52,7 @@
       border: 1px solid var(--card-border);
       border-radius: 18px;
       background: rgba(255, 255, 255, 0.88);
+      -webkit-backdrop-filter: blur(2px);
       backdrop-filter: blur(2px);
       box-shadow: 0 10px 30px rgba(22, 38, 28, 0.07);
     }
@@ -77,6 +78,11 @@
       border-radius: 999px;
       padding: 2px 10px;
       display: inline-block;
+    }
+
+    .tag-example {
+      background: #fff2ce;
+      color: #8a6400;
     }
 
     .btn-main {
@@ -233,7 +239,7 @@
 
         <div class="col-12 col-md-6 col-xl-4">
           <div class="module-card p-3 border-warning-subtle">
-            <div class="tag mb-2" style="background:#fff2ce;color:#8a6400;">Exemplo base</div>
+            <div class="tag tag-example mb-2">Exemplo base</div>
             <h4 class="h6 fw-bold">Usuarios (pagina exemplo)</h4>
             <p class="help-text mb-3">Referencia para estrutura CRUD com Bootstrap.</p>
             <a class="btn btn-outline-warning btn-sm" href="usuarios.html">Abrir usuarios.html</a>

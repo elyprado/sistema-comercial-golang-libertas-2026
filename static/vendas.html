@@ -50,34 +50,34 @@
           <h2 class="h5 mb-3">1. Registrar nova venda</h2>
           <div class="row g-3 mb-3">
             <div class="col-12 col-md-6">
-              <label class="form-label">Cliente</label>
+              <label for="clienteSelect" class="form-label">Cliente</label>
               <select id="clienteSelect" class="form-select"></select>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Vendedor</label>
+              <label for="vendedorSelect" class="form-label">Vendedor</label>
               <select id="vendedorSelect" class="form-select"></select>
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Data da venda</label>
+              <label for="saleDate" class="form-label">Data da venda</label>
               <input id="saleDate" type="date" class="form-control" />
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Data de vencimento</label>
+              <label for="dueDate" class="form-label">Data de vencimento</label>
               <input id="dueDate" type="date" class="form-control" />
             </div>
           </div>
 
           <div class="row g-3 align-items-end mb-3">
             <div class="col-12 col-md-6">
-              <label class="form-label">Produto</label>
+              <label for="produtoSelect" class="form-label">Produto</label>
               <select id="produtoSelect" class="form-select"></select>
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label">Quantidade</label>
+              <label for="quantidadeInput" class="form-label">Quantidade</label>
               <input id="quantidadeInput" type="number" min="1" value="1" class="form-control" />
             </div>
             <div class="col-6 col-md-3">
-              <label class="form-label">Valor unitário</label>
+              <label for="unitPriceInput" class="form-label">Valor unitário</label>
               <input id="unitPriceInput" type="number" min="0" step="0.01" class="form-control" readonly />
             </div>
           </div>
@@ -114,11 +114,11 @@
           <h2 class="h5 mb-3">2. Consultar vendas</h2>
           <div class="row g-3">
             <div class="col-12 col-md-6">
-              <label class="form-label">Data inicial</label>
+              <label for="filterStart" class="form-label">Data inicial</label>
               <input id="filterStart" type="date" class="form-control" />
             </div>
             <div class="col-12 col-md-6">
-              <label class="form-label">Data final</label>
+              <label for="filterEnd" class="form-label">Data final</label>
               <input id="filterEnd" type="date" class="form-control" />
             </div>
             <div class="col-12">
@@ -190,8 +190,13 @@
 
     const detailsModal = new bootstrap.Modal(document.getElementById('detailsModal'));
 
-    async function fetchJson(url) {
-      const resp = await fetch(url);
+    async function fetchJson(url, options = {}) {
+      const token = sessionStorage.getItem('token');
+      options.headers = options.headers || {};
+      if (token) {
+        options.headers.Authorization = 'Bearer ' + token;
+      }
+      const resp = await fetch(url, options);
       if (!resp.ok) throw new Error('Falha ao carregar: ' + url);
       return resp.json();
     }
@@ -301,7 +306,10 @@
       };
       const resp = await fetch('/vendas', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + sessionStorage.getItem('token')
+        },
         body: JSON.stringify(body)
       });
       if (!resp.ok) {
