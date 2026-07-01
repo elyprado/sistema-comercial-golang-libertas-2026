@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"go-crud-api/config"
 	"go-crud-api/models"
+	"go-crud-api/utils"
 	"net/http"
 	"time"
 
@@ -12,6 +13,11 @@ import (
 )
 
 func GetContasAReceber(w http.ResponseWriter, r *http.Request) {
+
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, err := config.Connect()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -80,6 +86,11 @@ func GetContasAReceber(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateContaAReceber(w http.ResponseWriter, r *http.Request) {
+
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
@@ -116,6 +127,11 @@ func CreateContaAReceber(w http.ResponseWriter, r *http.Request) {
 }
 
 func BaixarContaAReceber(w http.ResponseWriter, r *http.Request) {
+
+	if !utils.ValidarTokenRequest(w, r) {
+		return
+	}
+
 	db, erro := config.Connect()
 	if erro != nil {
 		http.Error(w, erro.Error(), http.StatusInternalServerError)
